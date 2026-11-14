@@ -11,6 +11,5 @@ def open_connection():
 
     return conn
 
-print(open_connection())
 def close_connection(conn):
     conn.close()
