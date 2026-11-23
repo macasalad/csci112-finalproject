@@ -1,0 +1,43 @@
+{% load event_tags %}
+{% comment %}
+  Organizer event card (Figma: "Organizer Portal - Events and Participant Lists" → Article).
+  Expects: event, event_id. Optional: selected, show_roster_link, read_only (hides Edit/Cancel).
+{% endcomment %}
+<article class="event-card{% if selected %} is-selected{% endif %}{% if event.status == 'Cancelled' %} is-muted{% endif %}">
+  <div class="card-top">
+    <div class="chips">
+      <span class="chip s-{{ event.status|lower }}">{{ event.status }}</span>
+      {% if event.eventType %}<span class="chip t-{{ event.eventType|lower }}">{{ event.eventType }}</span>{% endif %}
+    </div>
+    <span class="audience">{% if event.openToAll %}Open to all{% else %}Members only{% endif %}</span>
+  </div>
+
+  <h3 class="event-title">{{ event.eventName }}</h3>
+
+  <div class="meta">
+    {% if event.location %}<span><svg class="i"><use href="#i-pin"/></svg>{{ event.location }}</span>{% endif %}
+    <span><svg class="i"><use href="#i-cal"/></svg>{{ event.startTime|local_dt|date:"M j, Y · g:i A" }}</span>
+  </div>
+
+  {% with pct=event.currentParticipants|percent_of:event.maxParticipants %}
+  <div class="enlist">
+    <span><svg class="i"><use href="#i-users"/></svg>Enlistment</span>
+    <b>{{ event.currentParticipants|default:0 }} / {{ event.maxParticipants }} ({{ pct }}%)</b>
+  </div>
+  <div class="bar"><i style="width: {{ pct }}%"></i></div>
+  {% endwith %}
+
+  <div class="card-actions">
+    {% if not read_only and event.status != 'Cancelled' and event.status != 'Completed' %}
+      <a class="btn-sm" href="{% url 'edit_event' event_id=event_id %}"><svg class="i"><use href="#i-edit"/></svg>Edit</a>
+      <form method="POST" action="{% url 'cancel_event' event_id=event_id %}"
+            onsubmit="return confirm('Cancel “{{ event.eventName|escapejs }}”? Participants will no longer see it in available events.');">
+        {% csrf_token %}
+        <button type="submit" class="btn-sm danger"><svg class="i"><use href="#i-trash"/></svg>Cancel</button>
+      </form>
+    {% endif %}
+    {% if show_roster_link %}
+      <a class="link-sm" href="{% url 'event_detail' event_id=event_id %}">View roster</a>
+    {% endif %}
+  </div>
+</article>
