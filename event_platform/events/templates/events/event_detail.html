@@ -1,40 +1,186 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>{{ event.eventName }}</title>
-</head>
-<body>
+{% extends 'events/org_base.html' %}
+{% load event_tags %}
 
-    <h1>{{ event.eventName }}</h1>
+{% block title %}{{ event.eventName }}{% endblock %}
 
-    {% if event.status != 'Cancelled' %}
-        <a href="{% url 'edit_event' event_id=event_id %}">
-            <button type="button">Edit Event</button>
-        </a>
-    {% endif%}
-    
-    <p><strong>Status:</strong> {{ event.status }}
-    <br><strong>Start:</strong> {{ event.startTime }}
-    <br><strong>End:</strong> {{ event.endTime }}</p>
-    <p><strong>Description:</strong><br>
-    {{ event.description }}</p>
-    <p><strong>Location:</strong> {{ event.location }}</p>
-    <p><strong>Event Type:</strong> {{ event.eventType }}</p>
-    <p><strong>Maximum Participants:</strong> {{ event.maxParticipants }}</p>
-    <p><strong>Current Participants:</strong> {{ event.currentParticipants }}</p>
-    <p><strong>Open to All:</strong> {{ event.openToAll }}</p>
-    
-    <h3>Participants</h3>
+{% block extra_style %}
+    .detail { display: grid; grid-template-columns: 408px minmax(0, 1fr); min-height: 640px; }
+    .sidebar { background: var(--panel-alt); border-right: 1px solid var(--border); padding: 12px; display: grid; gap: 12px; align-content: start; }
+    .about { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 15px; display: grid; gap: 12px; }
+    .about p { font-size: 11px; line-height: 17px; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
+    .facts { display: grid; gap: 10px; }
+    .fact { display: flex; gap: 9px; align-items: flex-start; }
+    .fact svg.i { width: 16px; height: 16px; color: var(--blue); margin-top: 1px; }
+    .fact small { display: block; font-size: 9px; line-height: 13.5px; color: var(--faint); }
+    .fact b { display: block; font-weight: 700; font-size: 11px; line-height: 16px; color: var(--text); }
+    .card-actions:not(:has(*)) { display: none; }
 
-    <ul>
-        {% for participant in participants %}
-            <li>({{ participant.idNumber }}) {{ participant.firstName }} {{ participant.lastName }}</li>
-        {% empty %}
-            <li>No one is currently registered in this event.</li>
-        {% endfor%}
-    </ul>
-    
-    <a href="{% url 'org_event_list' %}">Back to My Events</a>
+    .roster { display: flex; flex-direction: column; min-width: 0; }
+    .roster-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 88px; padding: 20px 23px; border-bottom: 1px solid var(--border); }
+    .roster-head h2 { font: 700 18px/22.5px "Manrope", sans-serif; letter-spacing: -.45px; color: var(--ink); margin-top: 5px; overflow-wrap: anywhere; }
+    .count { border-left: 1px solid var(--border); padding-left: 18px; min-width: 80px; }
+    .count b { display: block; font: 700 22px "Manrope", sans-serif; color: var(--navy); }
+    .count span { font-size: 9px; line-height: 13.5px; color: #8a94a3; }
+    .roster-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 23px; border-bottom: 1px solid var(--border); }
+    .roster-tools .search { width: 380px; max-width: 100%; }
+    .shown { font-size: 9px; line-height: 13.5px; color: #7b8697; white-space: nowrap; }
+    .table-wrap { overflow-x: auto; flex: 1; }
+    .row { display: grid; grid-template-columns: minmax(220px, 1.6fr) minmax(170px, 1fr) 110px; gap: 18px; align-items: center; min-width: 560px; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+    .row.head { background: #f4f6fb; padding-top: 11px; padding-bottom: 11px; }
+    .row.head span { font-weight: 800; font-size: 8px; line-height: 12px; letter-spacing: .56px; text-transform: uppercase; color: #7d8797; }
+    .person { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: #dfeaff; color: var(--navy); display: grid; place-items: center; font-weight: 700; font-size: 10px; flex: none; }
+    .two-line { min-width: 0; }
+    .two-line b { display: block; font-weight: 700; font-size: 10px; line-height: 15px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .two-line small { display: block; font-size: 8px; line-height: 12px; color: var(--faint); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chip-status { display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; border-radius: 5px; font-weight: 800; font-size: 8px; line-height: 12px; text-transform: uppercase; background: #eef1f5; color: #52627a; }
+    .roster-empty { padding: 64px 23px; text-align: center; color: var(--muted); font-size: 12px; display: grid; gap: 6px; }
+    .roster-empty b { font: 700 15px "Manrope", sans-serif; color: var(--ink); }
+    [hidden] { display: none !important; }
 
-</body>
-</html>
+    @media (max-width: 960px) {
+      .detail { grid-template-columns: 1fr; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+      .roster-tools { flex-wrap: wrap; }
+    }
+{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    {% if request.session.role == 'organizer' %}
+      <a class="back-link" href="{% url 'org_event_list' %}"><svg class="i"><use href="#i-left"/></svg>Back to my events</a>
+      <a class="btn btn-primary" href="{% url 'create_event' %}"><svg class="i"><use href="#i-plus"/></svg>Host event</a>
+    {% else %}
+      <a class="back-link" href="{% url 'event_list' %}"><svg class="i"><use href="#i-left"/></svg>Back to events</a>
+    {% endif %}
+  </div>
+
+  {% with owner_id=event.organizationID|stringformat:"s" %}
+  <section class="panel detail">
+    <aside class="sidebar">
+      {% if request.session.role == 'organizer' and owner_id == request.session.profile_id %}
+        {% include 'events/_event_card.html' with event=event event_id=event_id selected=True %}
+      {% else %}
+        {% include 'events/_event_card.html' with event=event event_id=event_id selected=True read_only=True %}
+      {% endif %}
+
+      <div class="about">
+        <span class="eyebrow">About this event</span>
+        {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+        <div class="facts">
+          <div class="fact">
+            <svg class="i"><use href="#i-clock"/></svg>
+            <span>
+              <small>Starts</small>
+              <b>{{ event.startTime|local_dt|date:"D, M j, Y · g:i A" }}</b>
+            </span>
+          </div>
+          <div class="fact">
+            <svg class="i"><use href="#i-clock"/></svg>
+            <span>
+              <small>Ends</small>
+              <b>{{ event.endTime|local_dt|date:"D, M j, Y · g:i A" }}</b>
+            </span>
+          </div>
+          <div class="fact">
+            <svg class="i"><use href="#i-pin"/></svg>
+            <span>
+              <small>Venue</small>
+              <b>{{ event.location|default:"To be announced" }}</b>
+            </span>
+          </div>
+          <div class="fact">
+            <svg class="i"><use href="#i-users"/></svg>
+            <span>
+              <small>Who can enlist</small>
+              <b>{% if event.openToAll %}Open to all Ateneans{% else %}Organization members only{% endif %}</b>
+            </span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="roster">
+      <div class="roster-head">
+        <div>
+          <span class="eyebrow">Participant list</span>
+          <h2>{{ event.eventName }}</h2>
+        </div>
+        <div class="count">
+          <b>{{ participants|length }}</b>
+          <span>registered</span>
+        </div>
+      </div>
+
+      {% if participants %}
+        <div class="roster-tools">
+          <label class="search">
+            <svg class="i"><use href="#i-search"/></svg>
+            <span class="sr-only">Search participants</span>
+            <input type="search" id="roster-search" placeholder="Search by name, ID, or course" autocomplete="off">
+          </label>
+          <span class="shown"><span id="roster-shown">{{ participants|length }}</span> participant{{ participants|length|pluralize }} shown</span>
+        </div>
+
+        <div class="table-wrap">
+          <div class="row head" role="row">
+            <span>Participant</span>
+            <span>Degree &amp; year</span>
+            <span>Status</span>
+          </div>
+          {% for participant in participants %}
+            <div class="row" role="row"
+                 data-search="{{ participant.firstName|lower }} {{ participant.lastName|lower }} {{ participant.idNumber|lower }} {{ participant.course|lower }} {{ participant.email|lower }}">
+              <div class="person">
+                <span class="avatar">{{ participant.firstName|slice:":1"|upper }}{{ participant.lastName|slice:":1"|upper }}</span>
+                <span class="two-line">
+                  <b>{{ participant.firstName }} {{ participant.lastName }}</b>
+                  <small>{{ participant.idNumber }}{% if participant.email %} · {{ participant.email }}{% endif %}</small>
+                </span>
+              </div>
+              <span class="two-line">
+                <b>{{ participant.course|default:"—" }}</b>
+                {% if participant.year %}<small>Year {{ participant.year }}</small>{% endif %}
+              </span>
+              <span><span class="chip-status">Registered</span></span>
+            </div>
+          {% endfor %}
+          <div class="roster-empty" id="roster-no-match" hidden>
+            <b>No participants match your search</b>
+            <span>Try a different name, ID number, or course.</span>
+          </div>
+        </div>
+      {% else %}
+        <div class="roster-empty">
+          <b>No one has registered yet</b>
+          <span>Participants who enlist in this event will appear here.</span>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endwith %}
+{% endblock %}
+
+{% block scripts %}
+  {% if participants %}
+  <script>
+    (function () {
+      var input = document.getElementById('roster-search');
+      var rows = Array.prototype.slice.call(document.querySelectorAll('.row[data-search]'));
+      var shown = document.getElementById('roster-shown');
+      var none = document.getElementById('roster-no-match');
+      input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase();
+        var count = 0;
+        rows.forEach(function (row) {
+          var match = !q || row.getAttribute('data-search').indexOf(q) !== -1;
+          row.hidden = !match;
+          if (match) count++;
+        });
+        shown.textContent = count;
+        none.hidden = count !== 0;
+      });
+    })();
+  </script>
+  {% endif %}
+{% endblock %}
