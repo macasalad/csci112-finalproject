@@ -1,74 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Event</title>
-</head>
-<body>
+{% extends 'events/org_base.html' %}
 
-    <h1>Edit {{ event.eventName }}</h1>
+{% block title %}Edit {{ event.eventName }}{% endblock %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
+{% block extra_style %}
+{% include 'events/_event_form_style.html' %}
+{% endblock %}
 
-    <form method="POST">
-        {% csrf_token %}
+{% block messages %}{% endblock %}
 
-        <div>
-            <label>Event Title:</label>
-            <input type="text" name="title" value="{{ event.eventName }}" required>
-        </div>
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Organizer workspace</span>
+  </div>
+{% endblock %}
 
-        <div>
-            <label>Description:</label>
-            <textarea name="description" required>{{ event.description }}</textarea>
-        </div>
-
-        <div>
-            <label>Start Time:</label>
-            <input type="datetime-local" name="startTime" value="{{ start_time }}" required>
-        </div>
-
-        <div>
-            <label>End Time:</label>
-            <input type="datetime-local" name="endTime" value="{{ end_time }}" required>
-        </div>
-
-        <div>
-            <label>Venue:</label>
-            <input type="text" name="venue" value="{{ event.location }}" required>
-        </div>
-
-        <div>
-            <label>Event Type:</label>
-            <select name="eventType" required>
-                {% for type in types %}
-                    <option value="{{ type }}" {% if event.eventType == type %}selected{% endif %}>
-                        {{ type }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div>
-            <label>Maximum Number of Participants:</label>
-            <input type="number" name="maxParticipants" min="1" value="{{ event.maxParticipants }}" required>
-        </div>
-
-        <div>
-            <label>
-                <input type="checkbox" name="openToAll" {% if event.openToAll %}checked{% endif %}>
-                Open to participants outside of the org
-            </label>
-        </div>
-
-        <button type="submit">Save Changes</button>
-    </form>
-
-    <br>
-    <a href="{% url 'event_detail' event_id=event_id%}">Back to View Event Details</a><br>
-    <a href="{% url 'home' %}">Back to Home</a>
-
-</body>
-</html>
+{% block modal %}
+  {% url 'event_detail' event_id=event_id as close_url %}
+  {% include 'events/_event_form.html' with heading="Edit event" submit_label="Save changes" close_url=close_url %}
+{% endblock %}
