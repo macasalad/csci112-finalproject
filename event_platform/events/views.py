@@ -14,6 +14,13 @@ from datetime import datetime, timedelta
 from bson import ObjectId
 
 
+def to_local(value):
+    # PyMongo returns datetimes that are in UTC. convert them to local time.
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value, timezone.utc)
+    return timezone.localtime(value)
+
+
 def event_list(request):
     update_event_statuses()
     event_list = get_all_events()
@@ -114,8 +121,8 @@ def edit_event_view(request, event_id):
         'event': event,
         'types': TYPES,
         'statuses': STATUSES,
-        'start_time': timezone.make_aware(event['startTime']).strftime('%Y-%m-%dT%H:%M'),
-        'end_time': timezone.make_aware(event['endTime']).strftime('%Y-%m-%dT%H:%M'),
+        'start_time': to_local(event['startTime']).strftime('%Y-%m-%dT%H:%M'),
+        'end_time': to_local(event['endTime']).strftime('%Y-%m-%dT%H:%M'),
         'event_id': event_id
     })
 
