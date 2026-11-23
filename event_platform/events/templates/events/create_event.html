@@ -1,72 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Event</title>
-</head>
-<body>
+{% extends 'events/org_base.html' %}
 
-    <h1>Create Event</h1>
+{% block title %}Host a new event{% endblock %}
 
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
+{% block extra_style %}
+{% include 'events/_event_form_style.html' %}
+{% endblock %}
 
-    <form method="POST">
-        {% csrf_token %}
+{% block messages %}{% endblock %}
 
-        <div>
-            <label>Event Title:</label>
-            <input type="text" name="title" required>
-        </div>
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Organizer workspace</span>
+  </div>
+{% endblock %}
 
-        <div>
-            <label>Description:</label>
-            <textarea name="description" required></textarea>
-        </div>
-
-        <div>
-            <label>Start Time:</label>
-            <input type="datetime-local" name="startTime" required>
-        </div>
-
-        <div>
-            <label>End Time:</label>
-            <input type="datetime-local" name="endTime" required>
-        </div>
-
-        <div>
-            <label>Venue:</label>
-            <input type="text" name="venue" required>
-        </div>
-
-        <div>
-            <label>Event Type:</label>
-            <select name="eventType" required>
-                {% for type in types %}
-                    <option value="{{ type }}">{{ type }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div>
-            <label>Maximum Number of Participants:</label>
-            <input type="number" name="maxParticipants" min="1" required>
-        </div>
-
-        <div>
-            <label>
-                <input type="checkbox" name="openToAll">
-                Open to participants outside of the org
-            </label>
-        </div>
-
-        <button type="submit">Create Event</button>
-    </form>
-
-    <br>
-    <a href="{% url 'home' %}">Back to Home</a>
-
-</body>
-</html>
+{% block modal %}
+  {% url 'org_event_list' as close_url %}
+  {% include 'events/_event_form.html' with heading="Host a new event" submit_label="Publish event" close_url=close_url %}
+{% endblock %}
