@@ -1,12 +1,358 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Events</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blueboard · Ateneo Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #112f5e;
+      --navy-2: #1a4590;
+      --blue: #1a5ad9;
+      --blue-dark: #1650c2;
+      --ink: #0f1f3d;
+      --muted: #6b7690;
+      --soft: #edf1fa;
+      --border: #e3e8f2;
+      --bg: #f5f6fa;
+      --green: #12804b;
+      --green-bg: #e9f6ef;
+      --green-border: #cfe9da;
+      --red: #c62828;
+      --gutter: clamp(20px, 7vw, 122px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "DM Sans", system-ui, sans-serif; color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+    button { font-family: inherit; cursor: pointer; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Navbar ---------- */
+    .nav { background: #fff; height: 100px; display: flex; align-items: stretch; padding: 0 clamp(20px, 5vw, 86px); border-bottom: 1px solid var(--border); position: relative; z-index: 5; }
+    .brand { display: flex; align-items: center; gap: 14px; margin-right: 78px; }
+    .brand-icon { width: 50px; height: 50px; border-radius: 12px; background: var(--navy); display: grid; place-items: center; color: #fff; }
+    .brand-icon svg { width: 26px; height: 26px; }
+    .brand-name { font: 700 24px "Manrope", sans-serif; line-height: 1.1; }
+    .brand-sub { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+    .nav-links { display: flex; gap: 42px; }
+    .nav-link { background: none; border: 0; font: 600 19px "Manrope", sans-serif; color: var(--muted); position: relative; padding: 0; }
+    .nav-link.active { color: var(--navy); }
+    .nav-link.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--blue); }
+    .nav-user { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; background: #dfe9fb; color: var(--navy); font: 700 16px "Manrope", sans-serif; display: grid; place-items: center; }
+    .user-name { font: 700 18px "Manrope", sans-serif; }
+    .user-role { font-size: 15px; color: var(--muted); }
+    .icon-btn { background: none; border: 0; color: var(--muted); padding: 6px; display: grid; place-items: center; margin-left: 6px; }
+    .icon-btn svg { width: 26px; height: 26px; }
+    .icon-btn:hover { color: var(--navy); }
+    .nav-links, .nav-user { align-items: center; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; overflow: hidden; background: var(--navy); color: #fff; padding: 0 var(--gutter); height: 312px; display: flex; align-items: center; justify-content: space-between; }
+    .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+    .hero::before { width: 640px; height: 640px; right: -220px; top: -380px; background: rgba(255,255,255,.04); }
+    .hero::after { width: 380px; height: 380px; right: -60px; top: -250px; background: rgba(0,0,0,.08); }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-eyebrow { font-size: 14px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: #9db5e0; margin-bottom: 18px; }
+    .hero h1 { font: 700 clamp(38px, 4.4vw, 62px) "Manrope", sans-serif; letter-spacing: -.03em; line-height: 1.05; }
+    .hero-stat { border-left: 1px solid rgba(255,255,255,.18); padding: 4px 0 4px 38px; min-width: 200px; margin-right: clamp(0px, 3vw, 60px); }
+    .hero-stat b { display: block; font: 700 52px "Manrope", sans-serif; line-height: 1; }
+    .hero-stat span { display: block; margin-top: 12px; font-size: 18px; color: #a9bddf; }
+
+    /* ---------- Search + filters ---------- */
+    .search-zone { background: #fff; padding: 32px var(--gutter) 34px; border-bottom: 1px solid var(--border); }
+    .search { position: relative; max-width: 975px; }
+    .search svg { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; color: var(--muted); }
+    .search input { width: 100%; height: 70px; padding: 0 24px 0 66px; font: 400 21px "DM Sans", sans-serif; color: var(--ink); border: 1.5px solid var(--border); border-radius: 14px; outline: none; background: #fff; box-shadow: 0 1px 2px rgba(16,47,94,.04); }
+    .search input::placeholder { color: #9aa3b5; }
+    .search input:focus, .select-wrap select:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(26,90,217,.1); }
+    .filters { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 18px; }
+    .select-wrap { position: relative; }
+    .select-wrap select { appearance: none; height: 58px; padding: 0 46px 0 54px; font: 500 18px "DM Sans", sans-serif; color: var(--ink); border: 1.5px solid var(--border); border-radius: 12px; background: #fff; outline: none; cursor: pointer; }
+    .select-wrap > svg.i { position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); }
+    .select-wrap > svg.lead { left: 18px; }
+    .select-wrap > svg.chev { right: 16px; width: 18px; height: 18px; color: var(--ink); stroke-width: 2.4; }
+
+    /* ---------- Listing ---------- */
+    .listing { padding: 52px 33px 90px; }
+    .listing-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 34px; }
+    .listing-head h2 { font: 700 30px "Manrope", sans-serif; letter-spacing: -.02em; }
+    .sort select { height: 54px; padding: 0 46px 0 52px; font-size: 18px; color: var(--muted); border-radius: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .empty { grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 70px 0; font-size: 18px; }
+
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 36px; display: flex; flex-direction: column; cursor: pointer; transition: box-shadow .15s, transform .15s; min-width: 0; }
+    .card:hover { box-shadow: 0 10px 30px rgba(16,47,94,.09); transform: translateY(-2px); }
+    .tags { display: flex; align-items: center; gap: 8px; margin-bottom: 26px; }
+    .chip { font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 8px 14px; border-radius: 7px; white-space: nowrap; }
+    .chip.org { background: var(--navy); color: #fff; letter-spacing: .12em; font-size: 14px; }
+    .chip.status { margin-left: auto; border: 1.5px solid #9db5e0; color: var(--blue); background: #fff; padding: 6px 10px; border-radius: 6px; font-size: 12.5px; }
+    .t-workshop { background: #e4edfd; color: #1a4fc4; }
+    .t-talk { background: #efe8fd; color: #6b3fc4; }
+    .t-competition { background: #fdebd9; color: #c4641a; }
+    .t-conference { background: #fde6ea; color: #c42a4a; }
+    .t-social { background: #dff5e8; color: #13803f; }
+
+    .card-main { display: flex; gap: 22px; align-items: flex-start; min-height: 142px; }
+    .datebox { width: 106px; height: 140px; border-radius: 12px; background: linear-gradient(160deg, #1d4a98, #163b7d); color: #fff; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
+    .datebox .m { font-size: 17px; font-weight: 700; letter-spacing: .1em; color: #a9bddf; }
+    .datebox .d { font: 800 48px "Manrope", sans-serif; line-height: 1.05; }
+    .datebox .y { font-size: 15px; color: #c9d6ef; }
+    .info { min-width: 0; padding-top: 2px; }
+    .info h3 { font: 700 29px "Manrope", sans-serif; letter-spacing: -.025em; line-height: 1.18; }
+    .time { font-size: 19px; margin: 10px 0 12px; }
+    .aud { display: inline-block; font-size: 15px; font-weight: 600; color: #2f56b8; background: #e8eefc; padding: 7px 12px; border-radius: 7px; }
+
+    .venue { display: flex; align-items: center; gap: 14px; background: var(--soft); border-radius: 12px; padding: 0 22px; height: 62px; margin-top: 24px; }
+    .venue svg { color: var(--navy); width: 24px; height: 24px; }
+    .venue b { font: 700 18px "Manrope", sans-serif; white-space: nowrap; }
+    .venue .sep { width: 1px; height: 22px; background: #cfd7e8; flex: none; }
+    .venue .org { color: var(--muted); font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+    .cap { display: flex; justify-content: space-between; font-size: 17px; margin-top: 30px; color: #4a5672; }
+    .cap b { color: var(--navy); font-weight: 700; }
+    .cap b.full { color: var(--red); }
+    .bar { height: 9px; border-radius: 9px; background: #e9ecf3; margin-top: 12px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--blue); border-radius: 9px; }
+    .bar.full i { background: #c0302b; }
+    .avail { font-size: 15px; font-weight: 700; letter-spacing: .04em; color: #3b64b8; margin-top: 14px; }
+    .avail.full { color: var(--red); }
+
+    .btn { width: 100%; height: 66px; margin-top: auto; border-radius: 10px; border: 1.5px solid transparent; font: 700 19px "Manrope", sans-serif; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
+    .card .btn { margin-top: auto; }
+    .card-spacer { flex: 1; min-height: 40px; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-enlisted { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+    .btn-full { background: #97b4ec; color: #fff; cursor: not-allowed; }
+    .btn-delist { background: #fff; color: var(--red); border-color: #d9dde8; height: 76px; font-size: 20px; }
+    .btn-delist:hover { background: #fff6f6; }
+
+    /* ---------- Modal ---------- */
+    .overlay { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(10,30,60,.55); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); }
+    .overlay.open { display: flex; }
+    .modal { width: 100%; max-width: 780px; max-height: 94vh; overflow-y: auto; background: #fff; border-radius: 26px; padding: 48px; box-shadow: 0 30px 80px rgba(0,0,0,.3); position: relative; }
+    .modal .tags { margin-bottom: 34px; padding-right: 50px; }
+    .modal .chip { border-radius: 8px; font-size: 14px; }
+    .modal .chip.status { margin-left: 0; border: 0; background: #e4edfd; color: #1a4fc4; padding: 8px 14px; }
+    .close { position: absolute; top: 44px; right: 46px; background: none; border: 0; color: #4a5672; }
+    .close svg { width: 30px; height: 30px; stroke-width: 2; }
+    .modal h2 { font: 700 42px "Manrope", sans-serif; letter-spacing: -.03em; line-height: 1.1; }
+    .modal .desc { font-size: 21px; line-height: 1.55; color: var(--muted); margin: 14px 0 34px; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .fact { display: flex; align-items: center; gap: 18px; background: var(--bg); border-radius: 14px; padding: 20px 22px; }
+    .fact svg { color: var(--blue); width: 30px; height: 30px; }
+    .fact small { display: block; font-size: 17px; color: var(--muted); }
+    .fact b { font: 700 19px "Manrope", sans-serif; }
+    .host { display: flex; align-items: center; gap: 20px; border-top: 1px solid var(--border); margin-top: 34px; padding-top: 28px; }
+    .host-logo { width: 74px; height: 74px; border-radius: 12px; background: var(--navy); color: #fff; font: 700 17px "Manrope", sans-serif; display: grid; place-items: center; overflow: hidden; }
+    .host small { display: block; font-size: 15px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .host b { font: 700 21px "Manrope", sans-serif; }
+    .notice { background: #e8f0fd; border-radius: 14px; padding: 22px 26px; margin: 26px 0; }
+    .notice b { display: block; color: var(--blue); font: 700 21px "Manrope", sans-serif; margin-bottom: 4px; }
+    .notice span { color: #4a5672; font-size: 17px; }
+
+    @media (max-width: 1200px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+      .nav { height: auto; padding: 14px 20px; flex-wrap: wrap; gap: 12px; }
+      .brand { margin-right: 20px; }
+      .nav-links { gap: 22px; order: 3; width: 100%; padding-bottom: 10px; }
+      .user-name, .user-role { display: none; }
+      .hero { height: auto; padding-top: 50px; padding-bottom: 50px; flex-direction: column; align-items: flex-start; gap: 30px; }
+      .hero-stat { border-left: 0; padding-left: 0; }
+      .facts { grid-template-columns: 1fr; }
+      .modal { padding: 28px; }
+      .modal h2 { font-size: 30px; }
+      .close { top: 24px; right: 24px; }
+    }
+  </style>
 </head>
 <body>
 
-    <h1>Available Events</h1>
+  <!-- SVG icon sprite -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+    <symbol id="i-orgs" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7a6 6 0 0 1 10 0"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-userplus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M19 8v6M16 11h6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  </svg>
 
+  <!-- ========== NAVBAR ========== -->
+  <header class="nav">
+    <div class="brand">
+      <div class="brand-icon"><svg class="i"><use href="#i-cal"/></svg></div>
+      <div>
+        <div class="brand-name">Blueboard</div>
+        <div class="brand-sub">Ateneo Events</div>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <button class="nav-link active" data-view="discover">Discover</button>
+      <button class="nav-link" data-view="mine">My events</button>
+    </nav>
+
+    <div class="nav-user">
+      <div class="avatar">KP</div>
+      <div>
+        <div class="user-name">Kiko Pangilinan</div>
+        <div class="user-role">Participant</div>
+      </div>
+      <button class="icon-btn" title="Profile"><svg class="i"><use href="#i-user"/></svg></button>
+      <a class="icon-btn" href="#" title="Log out"><svg class="i"><use href="#i-logout"/></svg></a>
+    </div>
+  </header>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow" id="hero-eyebrow">Ateneo de Manila University</div>
+      <h1 id="hero-title">Find your next campus event.</h1>
+    </div>
+    <div class="hero-stat">
+      <b id="hero-count">0</b>
+      <span id="hero-label">upcoming events</span>
+    </div>
+  </section>
+
+  <!-- ========== SEARCH + FILTERS (Discover only) ========== -->
+  <section class="search-zone" id="search-zone">
+    <div class="search">
+      <svg class="i"><use href="#i-search"/></svg>
+      <input type="text" id="q" placeholder="Search by event title or keyword">
+    </div>
+    <div class="filters">
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-filter"/></svg>
+        <select id="f-type"><option value="">All types</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-orgs"/></svg>
+        <select id="f-org"><option value="">All organizations</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-cal"/></svg>
+        <select id="f-date"><option value="">Any date</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== LISTING ========== -->
+  <main class="listing">
+    <div class="listing-head">
+      <h2 id="list-title">Upcoming events</h2>
+      <div class="select-wrap sort">
+        <svg class="i lead"><use href="#i-sliders"/></svg>
+        <select id="sort">
+          <option value="soon">Soonest first</option>
+          <option value="late">Latest first</option>
+          <option value="seats">Most seats available</option>
+        </select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <!-- ========== EVENT DETAIL MODAL ========== -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="tags" id="m-tags"></div>
+      <button class="close" id="m-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <h2 id="m-title"></h2>
+      <p class="desc" id="m-desc"></p>
+      <div class="facts">
+        <div class="fact"><svg class="i"><use href="#i-cal"/></svg><div><small>Date</small><b id="m-date"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-clock"/></svg><div><small>Time</small><b id="m-time"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-pin"/></svg><div><small>Venue</small><b id="m-venue"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-orgs"/></svg><div><small>Availability</small><b id="m-avail"></b></div></div>
+      </div>
+      <div class="host">
+        <div class="host-logo" id="m-logo"></div>
+        <div><small>Hosted by</small><b id="m-org"></b></div>
+      </div>
+      <div class="notice"><b id="m-aud"></b><span id="m-aud-sub"></span></div>
+      <div id="m-action"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       SAMPLE DATA – replace later with your real events from Django.
+       e.g. const EVENTS = {{ events_json|safe }};
+       ============================================================ */
+    const EVENTS = [
+      { id:1, org:"COMPSAT", orgName:"Computer Society of the Ateneo", type:"Workshop", date:"2026-11-08", start:"1:00 PM", end:"4:00 PM", title:"Intro to MongoDB Workshop", desc:"A hands-on session on document databases, Atlas, and building scalable data models.", venue:"SEC-A 210", audience:"Open to all Ateneans", capacity:40, taken:28, enlisted:true },
+      { id:2, org:"AMA", orgName:"Ateneo Management Association", type:"Talk", date:"2026-11-11", start:"4:30 PM", end:"6:30 PM", title:"Product Design for Social Impact", desc:"Learn how product teams design for communities and measurable social outcomes.", venue:"CTC 413", audience:"Open to all Ateneans", capacity:80, taken:63, enlisted:false },
+      { id:3, org:"COMPSAT", orgName:"Computer Society of the Ateneo", type:"Competition", date:"2026-11-15", start:"8:00 AM", end:"6:00 PM", title:"Blue Hacks 2026", desc:"A one-day hackathon for CompSAT members. Build, pitch, and win.", venue:"Leong Hall Auditorium", audience:"Members only", capacity:120, taken:94, enlisted:false },
+      { id:4, org:"AMA", orgName:"Ateneo Management Association", type:"Conference", date:"2026-11-19", start:"5:00 PM", end:"7:00 PM", title:"Founder Stories: From Idea to Impact", desc:"Founders share how they took their ideas from a dorm-room sketch to real impact.", venue:"Escaler Hall", audience:"Open to all Ateneans", capacity:150, taken:87, enlisted:true },
+      { id:5, org:"COMPSAT", orgName:"Computer Society of the Ateneo", type:"Social", date:"2026-11-22", start:"2:00 PM", end:"5:00 PM", title:"Code & Coffee", desc:"Casual afternoon of coffee, side projects and good company.", venue:"Matteo Ricci Study Hall", audience:"Open to all Ateneans", capacity:45, taken:45, enlisted:false },
+      { id:6, org:"ADS", orgName:"Ateneo Debate Society", type:"Talk", date:"2026-11-27", start:"3:00 PM", end:"5:00 PM", title:"Responsible AI Roundtable", desc:"A moderated discussion on ethics, accountability and the future of AI.", venue:"Faber Hall 101", audience:"Open to all Ateneans", capacity:60, taken:21, enlisted:false }
+    ];
+
+    const $ = id => document.getElementById(id);
+    const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+    const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    let view = (location.hash === "#my-events") ? "mine" : "discover";
+
+    const parts = d => { const [y,m,dd] = d.split("-").map(Number); return { y, m: m-1, d: dd }; };
+    const left = e => e.capacity - e.taken;
+    const isFull = e => left(e) <= 0;
+    const pct = e => Math.round(e.taken / e.capacity * 100);
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+    const icon = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+
+    /* ---- Populate filter dropdowns from the data ---- */
+    function fillFilters() {
+      const add = (sel, values) => values.forEach(v => { const o = document.createElement("option"); o.value = v.value; o.textContent = v.label; $(sel).appendChild(o); });
+      add("f-type", [...new Set(EVENTS.map(e => e.type))].map(t => ({ value: t, label: t })));
+      add("f-org", [...new Set(EVENTS.map(e => e.orgName))].map(t => ({ value: t, label: t })));
+      const months = [...new Set(EVENTS.map(e => e.date.slice(0,7)))].sort();
+      add("f-date", months.map(m => { const [y,mo] = m.split("-").map(Number); return { value: m, label: `${MONTHS_LONG[mo-1]} ${y}` }; }));
+    }
+
+    /* ---- Action button (card + modal share this) ---- */
+    function actionBtn(e, inModal) {
+      if (e.enlisted) return inModal
+        ? `<button class="btn btn-delist" data-act="delist" data-id="${e.id}">Delist from event</button>`
+        : `<button class="btn btn-enlisted" data-act="none" data-id="${e.id}">${icon("check")} Enlisted</button>`;
+      if (isFull(e)) return `<button class="btn btn-full" disabled>Event full</button>`;
+      return `<button class="btn btn-primary" data-act="enlist" data-id="${e.id}">${icon("userplus")} Enlist</button>`;
+    }
+
+    /* ---- Card ---- */
+    function cardHTML(e) {
+      const p = parts(e.date), full = isFull(e);
+      return `
+      <article class="card" data-id="${e.id}">
+        <div class="tags">
+          <span class="chip org">${esc(e.org)}</span>
+          <span class="chip t-${e.type.toLowerCase()}">${esc(e.type)}</span>
+          <span class="chip status">Upcoming</span>
+        </div>
+        <div class="card-main">
+          <div class="datebox"><span class="m">${MONTHS[p.m]}</span><span class="d">${String(p.d).padStart(2,"0")}</span><span class="y">${p.y}</span></div>
+          <div class="info">
+            <h3>${esc(e.title)}</h3>
+            <div class="time">${e.start} – ${e.end}</div>
+            <span class="aud">${esc(e.audience)}</span>
+          </div>
     {% if messages %}
         {% for message in messages %}
             <p>{{ message }}</p>
@@ -21,14 +367,103 @@
             <p>{{ event.venue }}</p>
             <p>{{ event.status }}</p>
         </div>
+        <div class="venue">${icon("pin")}<b>${esc(e.venue)}</b><span class="sep"></span><span class="org">${esc(e.orgName)}</span></div>
+        <div class="cap"><span>Capacity filled</span><b class="${full ? "full" : ""}">${e.taken} / ${e.capacity} seats (${pct(e)}%)</b></div>
+        <div class="bar ${full ? "full" : ""}"><i style="width:${Math.min(100, pct(e))}%"></i></div>
+        <div class="avail ${full ? "full" : ""}">${full ? "Registration is currently full" : left(e) + " seats available"}</div>
+        <div class="card-spacer"></div>
+        ${actionBtn(e, false)}
+      </article>`;
+    }
 
-        <hr>
+    /* ---- Render list ---- */
+    function render() {
+      const mine = view === "mine";
 
-    {% empty %}
+      // Hero + chrome
+      document.querySelectorAll(".nav-link").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+      $("search-zone").hidden = mine;
+      $("hero-eyebrow").textContent = mine ? "Your registrations" : "Ateneo de Manila University";
+      $("hero-title").textContent = mine ? "Events on your calendar." : "Find your next campus event.";
+      $("list-title").textContent = mine ? "My events" : "Upcoming events";
+      $("hero-label").textContent = mine ? "active registrations" : "upcoming events";
+      $("hero-count").textContent = mine ? EVENTS.filter(e => e.enlisted).length : EVENTS.length;
 
-        <p>No events found.</p>
+      // Filter
+      const q = $("q").value.trim().toLowerCase();
+      let list = EVENTS.filter(e => {
+        if (mine) return e.enlisted;
+        if (q && !(e.title + " " + e.desc + " " + e.orgName + " " + e.venue).toLowerCase().includes(q)) return false;
+        if ($("f-type").value && e.type !== $("f-type").value) return false;
+        if ($("f-org").value && e.orgName !== $("f-org").value) return false;
+        if ($("f-date").value && !e.date.startsWith($("f-date").value)) return false;
+        return true;
+      });
 
-    {% endfor %}
+      // Sort
+      const s = $("sort").value;
+      list.sort((a,b) => s === "late" ? b.date.localeCompare(a.date) : s === "seats" ? left(b) - left(a) : a.date.localeCompare(b.date));
 
+      $("grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty">${mine ? "You haven't enlisted in any events yet." : "No events match your search."}</div>`;
+    }
+
+    /* ---- Modal ---- */
+    let openId = null;
+    function openModal(id) {
+      const e = EVENTS.find(x => x.id === id); if (!e) return;
+      openId = id;
+      const p = parts(e.date);
+      $("m-tags").innerHTML = `<span class="chip t-${e.type.toLowerCase()}">${esc(e.type)}</span><span class="chip status">Upcoming</span>`;
+      $("m-title").textContent = e.title;
+      $("m-desc").textContent = e.desc;
+      $("m-date").textContent = `${MONTHS_LONG[p.m].slice(0,3)} ${p.d}, ${p.y}`;
+      $("m-time").textContent = `${e.start} – ${e.end}`;
+      $("m-venue").textContent = e.venue;
+      $("m-avail").textContent = isFull(e) ? "No slots remaining" : `${left(e)} slots remaining`;
+      $("m-org").textContent = e.orgName;
+      $("m-logo").textContent = e.org;
+      $("m-aud").textContent = e.audience;
+      $("m-aud-sub").textContent = e.audience === "Members only"
+        ? "Only verified members of the hosting organization can register."
+        : "Your registration is recorded separately and can be cancelled at any time.";
+      $("m-action").innerHTML = actionBtn(e, true);
+      $("overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal() { $("overlay").classList.remove("open"); document.body.style.overflow = ""; openId = null; }
+
+    /* ---- Enlist / Delist (front-end only for now) ---- */
+    function setEnlisted(id, state) {
+      const e = EVENTS.find(x => x.id === id); if (!e) return;
+      if (state && !e.enlisted && !isFull(e)) { e.enlisted = true; e.taken++; }
+      else if (!state && e.enlisted) { e.enlisted = false; e.taken--; }
+      render();
+    }
+
+    /* ---- Events ---- */
+    document.querySelectorAll(".nav-link").forEach(b => b.addEventListener("click", () => {
+      view = b.dataset.view; history.replaceState(null, "", view === "mine" ? "#my-events" : "#discover"); render();
+    }));
+    ["q","f-type","f-org","f-date","sort"].forEach(id => $(id).addEventListener("input", render));
+
+    $("grid").addEventListener("click", ev => {
+      const btn = ev.target.closest("[data-act]");
+      if (btn) { ev.stopPropagation(); if (btn.dataset.act === "enlist") setEnlisted(+btn.dataset.id, true); return; }
+      const card = ev.target.closest(".card");
+      if (card) openModal(+card.dataset.id);
+    });
+    $("m-action").addEventListener("click", ev => {
+      const btn = ev.target.closest("[data-act]"); if (!btn) return;
+      const id = openId;
+      if (btn.dataset.act === "delist") { setEnlisted(id, false); closeModal(); }
+      if (btn.dataset.act === "enlist") { setEnlisted(id, true); openModal(id); }
+    });
+    $("m-close").addEventListener("click", closeModal);
+    $("overlay").addEventListener("click", ev => { if (ev.target === $("overlay")) closeModal(); });
+    document.addEventListener("keydown", ev => { if (ev.key === "Escape") closeModal(); });
+
+    fillFilters();
+    render();
+  </script>
 </body>
 </html>
