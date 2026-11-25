@@ -1,19 +1,98 @@
-{% extends 'base.html' %}
+{% extends "auth_base.html" %}
+{% block title %}Create account · Blueboard{% endblock %}
 
 {% block content %}
+  <div class="eyebrow">Ateneo Campus Events</div>
+  <h1>Create your account.</h1>
 
-<h2>Create an Account</h2>
+  <div class="tabs">
+    <button type="button" class="tab active" data-role="student">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7a6 6 0 0 1 10 0"/></svg>
+      Student
+    </button>
+    <button type="button" class="tab" data-role="organization">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>
+      Organization
+    </button>
+  </div>
 
-<a href="{% url 'participant_register' %}">
-    Register as a Participant
-</a>
+  {% if errors %}
+    <div class="error">{% for e in errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</div>
+  {% endif %}
 
-<br><br>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="role" id="role" value="{{ role|default:'student' }}">
 
-<a href="{% url 'organizer_register' %}">
-    Register as an Organizer
-</a>
+    <!-- ===== Student-only fields ===== -->
+    <div data-only="student">
+      <div class="row field">
+        <div>
+          <label for="first_name">First name</label>
+          <input type="text" id="first_name" name="first_name" placeholder="Your first name" required>
+        </div>
+        <div>
+          <label for="last_name">Last name</label>
+          <input type="text" id="last_name" name="last_name" placeholder="Your last name" required>
+        </div>
+      </div>
 
-<p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+      <div class="row field">
+        <div>
+          <label for="id_number">ID number</label>
+          <input type="text" id="id_number" name="id_number" placeholder="e.g. 230000" required>
+        </div>
+        <div>
+          <label for="year_level">Year level</label>
+          <select id="year_level" name="year_level">
+            <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          </select>
+        </div>
+      </div>
 
+      <div class="field">
+        <label for="course">Course</label>
+        <input type="text" id="course" name="course" placeholder="e.g. BS Computer Science" required>
+      </div>
+
+      <div class="field org-box">
+        <span class="label">Organization memberships</span>
+        <div class="org-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="org-search" placeholder="Search organizations">
+        </div>
+        <div class="org-list">
+          <!-- Placeholder list. Later replace with: {% verbatim %}{% for org in organizations %}<label><input type="checkbox" name="organizations" value="{{ org.id }}"> {{ org.name }}</label>{% endfor %}{% endverbatim %} -->
+          <label><input type="checkbox" name="organizations" value="1"> Computer Society of the Ateneo</label>
+          <label><input type="checkbox" name="organizations" value="2"> Ateneo Management Association</label>
+          <label><input type="checkbox" name="organizations" value="3"> Ateneo Debate Society</label>
+          <label><input type="checkbox" name="organizations" value="4"> Ateneo Computer Engineering Society</label>
+          <label><input type="checkbox" name="organizations" value="5"> Ateneo Celadon</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Organization-only fields ===== -->
+    <div data-only="organization" hidden>
+      <div class="field">
+        <label for="org_name">Organization name</label>
+        <input type="text" id="org_name" name="org_name" placeholder="e.g. Ateneo Debate Society" required disabled>
+      </div>
+    </div>
+
+    <!-- ===== Shared fields ===== -->
+    <div class="field">
+      <label for="email" id="email-label">Student email</label>
+      <input type="email" id="email" name="email" placeholder="name@student.ateneo.edu" required>
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    </div>
+
+    <button type="submit" class="btn">Create account</button>
+  </form>
+
+  <p class="switch">Already have an account? <a href="/login/">Sign in</a></p>
 {% endblock %}

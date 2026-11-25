@@ -16,6 +16,16 @@ from .crud.update import (
 )
 from .form_choices import COURSES, ORGANIZATIONS
 
+# Just to view
+"""
+def login_view(request):
+    return render(request, "events/login.html")
+
+def register_view(request): 
+    return render(request, "events/register.html")
+    """
+##
+
 def home(request):
     if not request.session.get('user_id'):
         return redirect('login')
