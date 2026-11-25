@@ -1,0 +1,116 @@
+{% extends 'events/org_base.html' %}
+
+{% block title %}My events{% endblock %}
+
+{% block extra_style %}
+    .workspace { display: flex; flex-direction: column; }
+    .toolbar { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: grid; gap: 10px; }
+    .toolbar-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .toolbar .search { flex: 1 1 320px; max-width: 520px; }
+    .filter { display: grid; gap: 5px; }
+    .filter > span { font-weight: 700; font-size: 9px; line-height: 13.5px; letter-spacing: .4px; text-transform: uppercase; color: #7d8797; }
+    .filter .control { min-height: 36px; height: 36px; padding-top: 0; padding-bottom: 0; font-size: 11px; }
+    .filter select.control { min-width: 130px; }
+    .check { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border: 1px solid #d8dee7; border-radius: 7px; background: #fff; font-weight: 600; font-size: 11px; color: #27364d; cursor: pointer; }
+    .check input { accent-color: var(--blue); }
+    .toolbar-actions { display: flex; gap: 8px; margin-left: auto; }
+    .toolbar-actions .btn { height: 36px; }
+    .result-count { font-weight: 600; font-size: 9px; line-height: 13.5px; color: #818c9d; }
+    .clear-link { font-weight: 700; font-size: 11px; color: #5470a0; display: inline-flex; align-items: center; height: 36px; padding: 0 6px; }
+    .clear-link:hover { color: var(--blue); text-decoration: underline; }
+    .card-grid { background: var(--panel-alt); padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 9px; min-height: 280px; align-content: start; }
+    .empty { grid-column: 1 / -1; display: grid; place-items: center; gap: 10px; text-align: center; padding: 64px 16px; color: var(--muted); font-size: 12px; }
+    .empty b { font: 700 15px "Manrope", sans-serif; color: var(--ink); }
+    .card-actions:not(:has(*)) { display: none; }
+    @media (max-width: 640px) { .toolbar-actions { margin-left: 0; width: 100%; } .filter, .filter select.control { width: 100%; } }
+{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Organizer workspace</span>
+    <a class="btn btn-primary" href="{% url 'create_event' %}"><svg class="i"><use href="#i-plus"/></svg>Host event</a>
+  </div>
+
+  <section class="panel workspace">
+    <form method="GET" class="toolbar">
+      <div class="toolbar-row">
+        <label class="search">
+          <svg class="i"><use href="#i-search"/></svg>
+          <span class="sr-only">Search your events</span>
+          <input type="search" name="search" value="{{ filters.search }}" placeholder="Search your events">
+        </label>
+      </div>
+
+      <div class="toolbar-row">
+        <label class="filter">
+          <span>Event type</span>
+          <select name="eventType" class="control">
+            <option value="">All types</option>
+            {% for type in types %}
+              <option value="{{ type }}" {% if filters.eventType == type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="filter">
+          <span>Audience</span>
+          <select name="openToAll" class="control">
+            <option value="">Everyone</option>
+            <option value="yes" {% if filters.openToAll == 'yes' %}selected{% endif %}>Open to all</option>
+            <option value="no" {% if filters.openToAll == 'no' %}selected{% endif %}>Members only</option>
+          </select>
+        </label>
+
+        <label class="filter">
+          <span>Start date from</span>
+          <input type="date" name="min_date" value="{{ min_date }}" class="control">
+        </label>
+
+        <label class="filter">
+          <span>Start date to</span>
+          <input type="date" name="max_date" value="{{ max_date }}" class="control">
+        </label>
+
+        <label class="filter">
+          <span>Sort by</span>
+          <select name="sort" class="control">
+            <option value="date_asc" {% if filters.sort == 'date_asc' %}selected{% endif %}>Date (earliest first)</option>
+            <option value="date_desc" {% if filters.sort == 'date_desc' %}selected{% endif %}>Date (latest first)</option>
+            <option value="name_asc" {% if filters.sort == 'name_asc' %}selected{% endif %}>Title (A–Z)</option>
+            <option value="name_desc" {% if filters.sort == 'name_desc' %}selected{% endif %}>Title (Z–A)</option>
+          </select>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="notDone" {% if filters.notDone %}checked{% endif %}>
+          Upcoming &amp; ongoing only
+        </label>
+
+        <div class="toolbar-actions">
+          <a class="clear-link" href="{% url 'org_event_list' %}">Clear</a>
+          <button type="submit" class="btn btn-primary"><svg class="i"><use href="#i-filter"/></svg>Apply filters</button>
+        </div>
+      </div>
+
+      <span class="result-count">{{ events|length }} result{{ events|length|pluralize }} shown</span>
+    </form>
+
+    <div class="card-grid">
+      {% for event in events %}
+        {% include 'events/_event_card.html' with event=event event_id=event.event_id show_roster_link=True %}
+      {% empty %}
+        <div class="empty">
+          {% if filters.search or filters.eventType or filters.openToAll or filters.notDone or min_date or max_date %}
+            <b>No events match these filters</b>
+            <span>Try clearing a filter or searching for a different title.</span>
+            <a class="btn btn-secondary" href="{% url 'org_event_list' %}">Clear filters</a>
+          {% else %}
+            <b>You haven't hosted any events yet</b>
+            <span>Events you create will show up here with their enlistment and roster.</span>
+            <a class="btn btn-primary" href="{% url 'create_event' %}"><svg class="i"><use href="#i-plus"/></svg>Host event</a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

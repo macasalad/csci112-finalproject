@@ -1,0 +1,20 @@
+{% extends 'events/org_base.html' %}
+
+{% block title %}Host a new event{% endblock %}
+
+{% block extra_style %}
+{% include 'events/_event_form_style.html' %}
+{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Organizer workspace</span>
+  </div>
+{% endblock %}
+
+{% block modal %}
+  {% url 'org_event_list' as close_url %}
+  {% include 'events/_event_form.html' with heading="Host a new event" submit_label="Publish event" close_url=close_url %}
+{% endblock %}

@@ -1,0 +1,20 @@
+    .overlay { position: fixed; inset: 0; z-index: 20; overflow-y: auto; display: flex; align-items: flex-start; justify-content: center; padding: 24px; background: rgba(7, 20, 40, .58); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+    .sheet { width: 100%; max-width: 760px; margin: auto 0; background: #fff; border-radius: 13px; padding: 28px; box-shadow: 0 22px 70px rgba(0, 0, 0, .24); }
+    .sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .sheet-head h1 { font: 700 21px "Manrope", sans-serif; letter-spacing: -.42px; color: var(--ink); margin-top: 11px; }
+    .close { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: #47546a; }
+    .close:hover { background: #f0f2f5; }
+    .close svg.i { width: 19px; height: 19px; }
+    .sheet-messages { margin: 18px 0 0; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 21px; }
+    .span-2 { grid-column: 1 / -1; }
+    .option { display: flex; gap: 9px; align-items: flex-start; background: #f6f8fb; border-radius: 8px; padding: 13px; cursor: pointer; }
+    .option input { margin-top: 3px; width: 13px; height: 13px; accent-color: #0075ff; flex: none; }
+    .option b { display: block; font-weight: 900; font-size: 11px; line-height: 16.5px; color: var(--label); }
+    .option small { display: block; font-size: 8.8px; line-height: 13.2px; color: #6d788b; padding-top: 2px; }
+    .sheet-foot { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    @media (max-width: 640px) {
+      .overlay { padding: 16px; }
+      .sheet { padding: 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }

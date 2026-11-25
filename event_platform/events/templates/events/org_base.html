@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Organizer Portal{% endblock %} · Blueboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #102f5e;
+      --blue: #1557d5;
+      --blue-hover: #1249b3;
+      --ink: #14233b;
+      --text: #2e3b50;
+      --label: #536075;
+      --muted: #657184;
+      --faint: #8993a2;
+      --eyebrow: #5f81b8;
+      --bg: #f5f7fa;
+      --panel-alt: #f8f9fb;
+      --border: #e3e8f0;
+      --line: #edf0f4;
+      --input-border: #d6dce6;
+      --red: #bf3d43;
+      --shadow-panel: 0 3px 18px rgba(17, 36, 65, .04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "DM Sans", system-ui, sans-serif; color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font-family: inherit; }
+    button { cursor: pointer; }
+    svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* ---------- Header ---------- */
+    .header { background: var(--navy); border-bottom: 1px solid var(--border); height: 74px; display: flex; align-items: center; gap: 48px; padding: 0 64px; color: #e3e8f0; }
+    .logo { display: flex; align-items: center; gap: 11px; min-width: 190px; }
+    .logo-mark { width: 37px; height: 37px; border-radius: 10px; background: #1559d5; display: grid; place-items: center; color: #fff; }
+    .logo-mark svg.i { width: 21px; height: 21px; }
+    .logo-name { font: 700 17px/25.5px "Manrope", sans-serif; letter-spacing: -.34px; }
+    .logo-sub { font-size: 10px; line-height: 15px; letter-spacing: 1px; text-transform: uppercase; }
+    .nav { display: flex; gap: 30px; align-self: stretch; }
+    .nav a { display: flex; align-items: center; padding-top: 2px; border-bottom: 2px solid transparent; font-weight: 700; font-size: 14px; line-height: 21px; opacity: .85; }
+    .nav a:hover { opacity: 1; }
+    .nav a.active { border-bottom-color: var(--blue); opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+    .account { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .account-badge { width: 36px; height: 36px; border-radius: 9px; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 10px; }
+    .account-name { font-weight: 700; font-size: 13px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .account-role { font-size: 11px; line-height: 16.5px; }
+    .icon-btn { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: #e3e8f0; }
+    .icon-btn:hover { background: rgba(255, 255, 255, .08); }
+    .icon-btn svg.i { width: 17px; height: 17px; }
+
+    /* ---------- Page shell ---------- */
+    .main { width: 100%; max-width: 1280px; margin: 0 auto; padding: 37px 24px 70px; }
+    .eyebrow { font-weight: 800; font-size: 10px; line-height: 15px; letter-spacing: 1.3px; color: var(--eyebrow); text-transform: uppercase; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 10px; min-height: 41px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12px; color: var(--muted); }
+    .back-link:hover { color: var(--navy); }
+    .panel { background: #fff; border: 1px solid var(--border); border-radius: 11px; box-shadow: var(--shadow-panel); overflow: hidden; }
+
+    /* ---------- Buttons ---------- */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 41px; padding: 0 16px; border-radius: 7px; border: 1px solid transparent; font-weight: 700; font-size: 12px; line-height: 18px; white-space: nowrap; transition: background .15s, border-color .15s; }
+    .btn svg.i { width: 18px; height: 18px; }
+    .btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn-primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+    .btn-secondary { background: #fff; border-color: #d9dfe8; color: #47546a; }
+    .btn-secondary:hover { background: #f6f8fb; }
+    .btn-sm { display: inline-flex; align-items: center; gap: 4px; height: 27px; padding: 0 8px; border-radius: 5px; border: 0; background: #eef3fb; font-weight: 700; font-size: 9px; line-height: 13.5px; color: #315589; }
+    .btn-sm:hover { background: #e2eaf7; }
+    .btn-sm.danger { color: var(--red); }
+    .btn-sm.danger:hover { background: #fbeeee; }
+    .link-sm { font-weight: 700; font-size: 9px; line-height: 13.5px; color: #5470a0; }
+    .link-sm:hover { color: var(--blue); text-decoration: underline; }
+
+    /* ---------- Chips ---------- */
+    .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 5px; font-weight: 800; font-size: 9px; line-height: 13.5px; letter-spacing: .495px; text-transform: uppercase; white-space: nowrap; }
+    .s-upcoming { background: #eaf2ff; color: #1c61c8; }
+    .s-ongoing { background: #e5f6ef; color: #177052; }
+    .s-completed { background: #eef1f5; color: #52627a; }
+    .s-cancelled { background: #fbeaea; color: var(--red); }
+    .t-workshop { background: #eaf1ff; color: #1455c5; }
+    .t-talk { background: #f0ebfd; color: #6a3fc0; }
+    .t-engagement { background: #fdf0e3; color: #a75413; }
+    .t-tambay { background: #e5f6ef; color: #177052; }
+    .chip-plain { background: #eef1f5; color: #52627a; }
+
+    /* ---------- Search + form controls ---------- */
+    .search { display: flex; align-items: center; gap: 12px; height: 41px; padding: 0 17px; background: #fff; border: 1px solid var(--input-border); border-radius: 9px; }
+    .search svg.i { width: 18px; height: 18px; color: var(--faint); }
+    .search input { flex: 1; min-width: 0; border: 0; outline: 0; font-size: 16px; color: var(--ink); background: transparent; }
+    .search input::placeholder { color: #929baa; }
+    .search:focus-within, .control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21, 87, 213, .12); }
+    .control { width: 100%; min-height: 42px; padding: 10px 12px; background: #fff; border: 1px solid #d8dee7; border-radius: 7px; font-weight: 500; font-size: 12px; line-height: 18px; color: #27364d; outline: 0; }
+    .control::placeholder { color: rgba(39, 54, 77, .5); }
+    select.control { appearance: none; padding-right: 34px; cursor: pointer; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' viewBox='0 0 10 6'%3E%3Cpath stroke='%2327364d' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m1 1 4 4 4-4'/%3E%3C/svg%3E") no-repeat right 14px center; }
+    textarea.control { min-height: 76px; resize: vertical; }
+    .field { display: grid; gap: 7px; align-content: start; }
+    .field > span { font-weight: 700; font-size: 11px; line-height: 16.5px; color: var(--label); }
+
+    /* ---------- Flash messages ---------- */
+    .messages { display: grid; gap: 8px; margin-bottom: 16px; }
+    .message { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; font-weight: 600; font-size: 12px; background: #eaf2ff; color: #1c61c8; border: 1px solid #d3e3ff; }
+    .message.success { background: #e5f6ef; color: #14724d; border-color: #c8ebdb; }
+    .message.error { background: #fbeaea; color: var(--red); border-color: #f3d0d1; }
+    .message svg.i { width: 16px; height: 16px; }
+
+    /* ---------- Shared event card ---------- */
+    .event-card { background: #fff; border: 1px solid var(--border); border-left-width: 3px; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; min-width: 0; transition: border-color .15s, box-shadow .15s; }
+    .event-card:hover { box-shadow: 0 5px 8px rgba(20, 57, 111, .08); }
+    .event-card.is-selected { border-color: var(--blue); box-shadow: 0 5px 8px rgba(20, 57, 111, .08); }
+    .event-card.is-muted { opacity: .72; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .audience { font-weight: 700; font-size: 9px; line-height: 13.5px; color: #6c7687; white-space: nowrap; }
+    .event-title { font: 700 14px/18.9px "Manrope", sans-serif; letter-spacing: -.28px; color: var(--ink); margin-top: 11px; overflow-wrap: anywhere; }
+    .meta { display: flex; flex-wrap: wrap; gap: 4px 13px; margin-top: 7px; }
+    .meta span { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; line-height: 13.5px; color: var(--muted); }
+    .enlist { display: flex; align-items: center; justify-content: space-between; margin-top: 13px; font-size: 9px; line-height: 13.5px; color: #627086; }
+    .enlist span { display: inline-flex; align-items: center; gap: 5px; }
+    .enlist b { font-weight: 700; color: var(--navy); }
+    .bar { height: 4px; border-radius: 4px; background: var(--line); margin-top: 7px; overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 4px; background: var(--blue); }
+    .card-actions { display: flex; align-items: center; gap: 5px; min-height: 37px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .card-actions form { display: contents; }
+    .card-actions .link-sm { margin-left: auto; }
+
+    @media (max-width: 900px) {
+      .header { gap: 20px; padding: 0 16px; height: auto; min-height: 64px; flex-wrap: wrap; padding-top: 10px; }
+      .logo { min-width: 0; }
+      .nav { order: 3; width: 100%; height: 40px; gap: 22px; }
+      .account-name, .account-role { display: none; }
+      .main { padding: 24px 16px 48px; }
+    }
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  </svg>
+
+  <header class="header">
+    <a class="logo" href="{% url 'home' %}">
+      <span class="logo-mark"><svg class="i"><use href="#i-cal"/></svg></span>
+      <span>
+        <span class="logo-name" style="display:block">Blueboard</span>
+        <span class="logo-sub" style="display:block">Ateneo Events</span>
+      </span>
+    </a>
+
+    {% with current=request.resolver_match.url_name %}
+    <nav class="nav" aria-label="Main">
+      <a href="{% url 'home' %}" class="{% if current == 'home' %}active{% endif %}">Overview</a>
+      {% if request.session.role == 'organizer' %}
+        <a href="{% url 'org_event_list' %}" class="{% if current == 'org_event_list' or current == 'create_event' or current == 'edit_event' or current == 'event_detail' %}active{% endif %}">Events</a>
+      {% else %}
+        <a href="{% url 'event_list' %}" class="{% if current == 'event_list' %}active{% endif %}">Discover events</a>
+      {% endif %}
+    </nav>
+    {% endwith %}
+
+    {% if request.session.user_id %}
+    <div class="account">
+      <span class="account-badge">{{ request.session.name|default:"?"|slice:":3" }}</span>
+      <span>
+        <span class="account-name" style="display:block">{{ request.session.name }}</span>
+        <span class="account-role" style="display:block">{{ request.session.role|capfirst }}</span>
+      </span>
+      <a class="icon-btn" href="{% url 'logout' %}" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></a>
+    </div>
+    {% endif %}
+  </header>
+
+  <main class="main">
+    {% block messages %}
+    {% if messages %}
+      <div class="messages" role="status">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">
+            <svg class="i"><use href="#{% if message.tags == 'success' %}i-check{% else %}i-info{% endif %}"/></svg>
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block modal %}{% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>
