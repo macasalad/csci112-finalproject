@@ -74,3 +74,10 @@ def get_event_participants(event_id):
     return list(participants.find({
         "_id": { "$in": participant_ids }
     }))
+def get_events_by_organization(org_id):
+    return list(events.find({
+        "organizationID": ObjectId(org_id)
+    }))
+
+def get_upcoming_events():
+    return list(events.find({"status": "Upcoming"}))
