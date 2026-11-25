@@ -13,3 +13,6 @@ def get_events_by_organization(org_id):
     return list(events.find({
         "organizationID": ObjectId(org_id)
     }))
+
+def get_upcoming_events():
+    return list(events.find({"status": "Upcoming"}))

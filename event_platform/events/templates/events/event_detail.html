@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+{% load tz %}
+<html lang="en">
+<head>
+    <title>{{ event.title }}</title>
+</head>
+<body>
+    <a href="{% url 'event_list' %}">Back to events</a>
+    <h1>{{ event.title }}</h1>
+    {% if event.description %}
+        <p>{{ event.description }}</p>
+    {% endif %}
+    {% if event.venue %}
+        <p>Venue: {{ event.venue }}</p>
+    {% endif %}
+    {% timezone "Asia/Manila" %}
+        {% if event.start_time %}
+            <p>Starts: {{ event.start_time|date:"M j, Y, g:i A" }} (Manila time)</p>
+        {% endif %}
+        {% if event.end_time %}
+            <p>Ends: {{ event.end_time|date:"M j, Y, g:i A" }} (Manila time)</p>
+        {% endif %}
+    {% endtimezone %}
+    {% if event.host %}
+        <p>Host: {{ event.host }}</p>
+    {% endif %}
+    {% if event.max_participants is not None %}
+        <p>Capacity: {{ event.max_participants }} participants</p>
+    {% endif %}
+    {% if event.current_participants is not None %}
+        <p>Registered: {{ event.current_participants }}</p>
+    {% endif %}
+    <p>Status: {{ event.status }}</p>
+</body>
+</html>
