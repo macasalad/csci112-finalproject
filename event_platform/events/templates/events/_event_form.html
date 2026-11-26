@@ -90,3 +90,47 @@
     </form>
   </div>
 </div>
+
+<script>
+  // Date checks shown as the browser's own popup next to the field,
+  // before the form is sent. The server still checks the same rules.
+  (function () {
+    const start = document.querySelector('input[name="startTime"]');
+    const end = document.querySelector('input[name="endTime"]');
+    if (!start || !end) return;
+
+    // "YYYY-MM-DDTHH:MM" in the user's local time, the format datetime-local uses
+    const pad = n => String(n).padStart(2, "0");
+    const nowValue = () => {
+      const d = new Date();
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    };
+
+    function check() {
+      const now = nowValue();
+      start.min = now;                 // the start picker can't go into the past
+      end.min = start.value || now;    // the end picker can't go before the start
+
+      start.setCustomValidity(
+        start.value && start.value < now ? "Start time cannot be in the past." : ""
+      );
+      end.setCustomValidity(
+        start.value && end.value && end.value <= start.value ? "End time must be later than start time." : ""
+      );
+    }
+
+    // Show the popup as soon as a bad date is picked, not only on submit
+    function checkAndShow(e) {
+      check();
+      if (!e.target.checkValidity()) e.target.reportValidity();
+    }
+
+    start.addEventListener("input", check);
+    end.addEventListener("input", check);
+    start.addEventListener("change", checkAndShow);
+    end.addEventListener("change", checkAndShow);
+    // Re-check "now" when the button is clicked (this runs before the browser's own check)
+    start.form.querySelectorAll('[type="submit"]').forEach(b => b.addEventListener("click", check));
+    check();
+  })();
+</script>

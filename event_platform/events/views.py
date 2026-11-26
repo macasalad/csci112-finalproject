@@ -71,6 +71,8 @@ def _card(doc, enlisted_ids=frozenset(), org_cache=None):
         'year': start.year,
         'start': _fmt_time(start),
         'end': _fmt_time(end),
+        'start_full': f"{start:%a, %b} {start.day}, {start.year} · {_fmt_time(start)}",   # Thu, Dec 3, 2026 · 1:00 PM
+        'end_full': f"{end:%a, %b} {end.day}, {end.year} · {_fmt_time(end)}",
         'title': doc.get('eventName', ''),
         'desc': doc.get('description', ''),
         'venue': doc.get('location', ''),
@@ -285,58 +287,29 @@ def cancel_event_view(request, event_id):
 
     return redirect('org_event_list')
 
-
-# ---------- Event detail ----------
-# Both versions from your file are kept; use whichever one urls.py points to.
-
 def event_detail_view(request, event_id):
+    if not request.session.get('user_id'):
+        return redirect('login')
+
     update_event_statuses()
 
-    event = get_event_by_id(event_id)
-    participants = get_event_participants(event_id)
+    try:
+        event = get_event_by_id(event_id)
+    except InvalidId as exc:
+        raise Http404("Event not found") from exc
+    if event is None:
+        raise Http404("Event not found")
+
+    is_owner = (
+        request.session.get('role') == 'organizer'
+        and str(event.get('organizationID')) == request.session.get('profile_id')
+    )
+    participants = get_event_participants(event_id) if is_owner else []
 
     return render(request, 'events/event_detail.html', {
         'event': event,
+        'card': _card(event),
         'event_id': event_id,
-        'participants': participants
+        'is_owner': is_owner,
+        'participants': participants,
     })
-
-
-def _display_event(doc):
-    return {
-        "id": str(doc["_id"]),
-        "title": doc.get("title") or doc.get("eventName") or "",
-        "description": doc.get("description") or "",
-        "venue": doc.get("venue") or doc.get("location") or "",
-        "status": doc.get("status", ""),
-    }
-
-
-def _event_time(value):
-    if not isinstance(value, datetime):
-        return None
-    if value.tzinfo is None:
-        return value.replace(tzinfo=dt_timezone.utc)
-    return value
-
-
-def event_detail(request, event_id):
-    try:
-        doc = get_event_by_id(event_id)
-    except InvalidId as exc:
-        raise Http404("Event not found") from exc
-
-    if doc is None or doc.get("status") != "Upcoming":
-        raise Http404("Event not found")
-
-    organizer_id = doc.get("organizationID")
-    organizer = get_organizer_by_id(organizer_id) if organizer_id else None
-    event = {
-        **_display_event(doc),
-        "start_time": _event_time(doc.get("startTime")),
-        "end_time": _event_time(doc.get("endTime")),
-        "host": organizer.get("organizationName") if organizer else None,
-        "max_participants": doc.get("maxParticipants"),
-        "current_participants": doc.get("currentParticipants"),
-    }
-    return render(request, "events/event_detail.html", {"event": event})
