@@ -18,11 +18,13 @@
     </button>
   </div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="{% if message.level_tag == 'success' %}notice{% else %}error{% endif %}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
+  {# Errors from this form submission #}
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  {# Messages carried over from a redirect #}
+  {% for message in messages %}
+    <div class="{% if message.level_tag == 'success' %}notice{% else %}error{% endif %}">{{ message }}</div>
+  {% endfor %}
 
   <form method="post" data-role-form novalidate
         action="{% if role == 'organization' %}{% url 'organizer_register' %}{% else %}{% url 'participant_register' %}{% endif %}">

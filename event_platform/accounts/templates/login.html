@@ -18,6 +18,10 @@
 
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
 
+  {% for message in messages %}
+    <div class="{% if message.level_tag == 'success' %}notice{% else %}error{% endif %}">{{ message }}</div>
+  {% endfor %}
+
   <form method="post" novalidate>
     {% csrf_token %}
     <input type="hidden" name="role" id="role" value="{{ role|default:'student' }}">
@@ -36,5 +40,5 @@
     <button type="submit" class="btn">Sign in</button>
   </form>
 
-  <p class="switch">New to Blueboard? <a href="/register/">Create an account</a></p>
+  <p class="switch">New to Blueboard? <a href="{% url 'register' %}">Create an account</a></p>
 {% endblock %}

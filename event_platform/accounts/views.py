@@ -16,25 +16,16 @@ from .crud.update import (
 )
 from .form_choices import COURSES, ORGANIZATIONS
 
-
 def home(request):
     if not request.session.get('user_id'):
         return redirect('login')
 
     return render(request, 'home.html')
 
-
-# ---------- Registration ----------
-
-def _render_register(request, role):
-    """
-    Both /register/participant/ and /register/organizer/ use register.html.
-    `role` ('student' or 'organization') picks the active tab, the visible
-    fields and the URL the form posts to. On a failed POST the typed values
-    are sent back so the user doesn't have to retype everything.
-    """
+def _render_register(request, role, error=None):
     is_post = request.method == 'POST'
     return render(request, 'register.html', {
+        'error': error,
         'role': role,
         'courses': COURSES,
         'all_organizations': ORGANIZATIONS,
@@ -42,11 +33,9 @@ def _render_register(request, role):
         'selected_orgs': request.POST.getlist('organizations') if is_post else [],
     })
 
-
 def register(request):
     # /register/ on its own just opens the student tab.
     return redirect('participant_register')
-
 
 def participant_register(request):
     if request.method != 'POST':
@@ -61,22 +50,18 @@ def participant_register(request):
 
     # The form uses `novalidate`, so the browser won't block empty fields.
     if not all([email, id_number, password, first_name, last_name, course]):
-        messages.error(request, 'Please fill in all required fields.')
-        return _render_register(request, 'student')
+        return _render_register(request, 'student', 'Please fill in all required fields.')
 
     if get_user_by_email(email):
-        messages.error(request, 'Email is already registered.')
-        return _render_register(request, 'student')
+        return _render_register(request, 'student', 'Email is already registered.')
 
     if get_participant_by_student_id(id_number):
-        messages.error(request, 'Student ID is already registered.')
-        return _render_register(request, 'student')
+        return _render_register(request, 'student', 'Student ID is already registered.')
 
     try:
         year = int(request.POST.get('year'))
     except (ValueError, TypeError):
-        messages.error(request, 'Please enter a valid year level.')
-        return _render_register(request, 'student')
+        return _render_register(request, 'student', 'Please enter a valid year level.')
 
     participant = {
         'idNumber': id_number,
@@ -96,9 +81,7 @@ def participant_register(request):
         'profileId': result.inserted_id
     })
 
-    messages.success(request, 'Account created. You can now sign in.')
     return redirect('login')
-
 
 def organizer_register(request):
     if request.method != 'POST':
@@ -109,16 +92,13 @@ def organizer_register(request):
     organization_name = request.POST.get('organizationName', '').strip()
 
     if not all([email, password, organization_name]):
-        messages.error(request, 'Please fill in all required fields.')
-        return _render_register(request, 'organization')
+        return _render_register(request, 'organization', 'Please fill in all required fields.')
 
     if get_user_by_email(email):
-        messages.error(request, 'Email is already registered.')
-        return _render_register(request, 'organization')
+        return _render_register(request, 'organization', 'Email is already registered.')
 
     if get_organizer_by_name(organization_name):
-        messages.error(request, 'Organization is already registered.')
-        return _render_register(request, 'organization')
+        return _render_register(request, 'organization', 'Organization is already registered.')
 
     result = create_organizer({
         'organizationName': organization_name,
@@ -132,11 +112,7 @@ def organizer_register(request):
         'profileId': result.inserted_id
     })
 
-    messages.success(request, 'Account created. You can now sign in.')
     return redirect('login')
-
-
-# ---------- Auth ----------
 
 def login(request):
     if request.method == 'POST':
@@ -160,22 +136,18 @@ def login(request):
                 if participant:
                     request.session['name'] = participant['firstName'] + " " + participant['lastName']
 
-            messages.success(request, 'Login successful!')
             return redirect('home')
 
-        messages.error(request, 'Invalid email or password.')
-        return render(request, 'login.html', {'form': request.POST})
+        return render(request, 'login.html', {
+            'error': 'Invalid email or password.',
+            'form': request.POST,
+        })
 
     return render(request, 'login.html')
 
-
 def logout(request):
     request.session.flush()
-    messages.success(request, 'You have been logged out.')
     return redirect('login')
-
-
-# ---------- Profile ----------
 
 def edit_profile(request):
     if not request.session.get('user_id'):
