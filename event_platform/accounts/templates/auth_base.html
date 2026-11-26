@@ -210,19 +210,28 @@
       const emailLabel = document.getElementById("email-label");
       const emailInput = document.getElementById("email");
 
-      function setRole(role) {
-        roleInput.value = role;
-        tabs.forEach(t => t.classList.toggle("active", t.dataset.role === role));
+      const form = document.querySelector("form[data-role-form]");
 
-        if (emailLabel) emailLabel.textContent = role === "student" ? "Student email" : "Organization email";
-        if (emailInput) emailInput.placeholder = role === "student" ? "name@student.ateneo.edu" : "org@ateneo.edu";
+    function setRole(role) {
+      roleInput.value = role;
+      tabs.forEach(t => t.classList.toggle("active", t.dataset.role === role));
 
-        document.querySelectorAll("[data-only]").forEach(el => {
-          const show = el.dataset.only === role;
-          el.hidden = !show;
-          el.querySelectorAll("input, select").forEach(i => i.disabled = !show);
-        });
+      // Register page only: post to the matching view and keep the URL in sync
+      const active = [...tabs].find(t => t.dataset.role === role);
+      if (form && active && active.dataset.url) {
+        form.action = active.dataset.url;
+        if (location.pathname !== active.dataset.url) history.replaceState(null, "", active.dataset.url);
       }
+
+      if (emailLabel) emailLabel.textContent = role === "student" ? "Student email" : "Organization email";
+      if (emailInput) emailInput.placeholder = role === "student" ? "name@student.ateneo.edu" : "org@ateneo.edu";
+
+      document.querySelectorAll("[data-only]").forEach(el => {
+        const show = el.dataset.only === role;
+        el.hidden = !show;
+        el.querySelectorAll("input, select").forEach(i => i.disabled = !show);
+      });
+    }
 
       tabs.forEach(t => t.addEventListener("click", () => setRole(t.dataset.role)));
       if (roleInput) setRole(roleInput.value || "student");
