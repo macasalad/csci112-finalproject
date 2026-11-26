@@ -221,6 +221,30 @@
     .card-actions form { display: contents; }
     .empty .btn { width: auto; padding: 0 16px; margin-top: 8px; }
 
+    /* ---------- Cancel-event confirmation popup (same look as the Discover details popup) ---------- */
+    .cm-overlay { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10,30,60,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .cm-overlay.open { display: flex; }
+    .cm-box { width: 100%; max-width: 420px; background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25); position: relative; }
+    .cm-close { position: absolute; top: 20px; right: 20px; background: none; border: 0; color: #4a5672; padding: 2px; border-radius: 6px; display: grid; place-items: center; }
+    .cm-close:hover { background: var(--soft); }
+    .cm-close svg { width: 16px; height: 16px; }
+    .cm-icon { width: 38px; height: 38px; border-radius: 10px; background: #fdecec; color: var(--red); display: grid; place-items: center; margin-bottom: 14px; }
+    .cm-icon svg { width: 18px; height: 18px; }
+    .cm-box .eyebrow { color: var(--red); margin-bottom: 5px; }
+    .cm-box h2 { font: 800 20px "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; padding-right: 24px; }
+    .cm-facts { display: grid; gap: 8px; margin: 16px 0 14px; }
+    .cm-fact { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 8px; padding: 9px 12px; }
+    .cm-fact svg { width: 15px; height: 15px; color: var(--blue); }
+    .cm-fact small { display: block; font-size: 8.5px; color: var(--muted); }
+    .cm-fact b { display: block; font-size: 10px; font-weight: 700; }
+    .cm-warn { background: #fdecec; border-radius: 8px; padding: 10px 12px; font-size: 9.5px; line-height: 1.5; color: #8f1f1f; }
+    .cm-warn b { display: block; font-size: 10.5px; color: var(--red); margin-bottom: 2px; }
+    .cm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .cm-actions .btn { width: auto; margin: 0; padding: 0 16px; }
+    .btn-danger-solid { background: var(--red); color: #fff; }
+    .btn-danger-solid:hover { background: #a91f1f; }
+    .btn-danger-solid:disabled { opacity: .6; cursor: wait; }
+
     @media (max-width: 800px) {
       .nav { height: auto; padding: 10px 16px 0; flex-wrap: wrap; gap: 8px; }
       .brand { margin-right: 12px; }
@@ -312,6 +336,29 @@
   {# Dialogs that sit on top of the page (create / edit event form). #}
   {% block modal %}{% endblock %}
 
+  {# Cancel-event confirmation. Opened by any <form data-cancel-event ...> on the page. #}
+  <div class="cm-overlay" id="cancel-confirm" role="dialog" aria-modal="true" aria-labelledby="cm-title">
+    <div class="cm-box">
+      <button type="button" class="cm-close" data-cm-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <div class="cm-icon"><svg class="i"><use href="#i-trash"/></svg></div>
+      <span class="eyebrow">Cancel event</span>
+      <h2 id="cm-title"></h2>
+      <div class="cm-facts">
+        <div class="cm-fact"><svg class="i"><use href="#i-cal"/></svg><div><small>Date &amp; time</small><b id="cm-when"></b></div></div>
+        <div class="cm-fact"><svg class="i"><use href="#i-pin"/></svg><div><small>Venue</small><b id="cm-venue"></b></div></div>
+        <div class="cm-fact"><svg class="i"><use href="#i-users"/></svg><div><small>Enlisted</small><b id="cm-enlisted"></b></div></div>
+      </div>
+      <div class="cm-warn">
+        <b>This can't be undone.</b>
+        The event will be marked as Cancelled and removed from Discover, so participants can no longer see or enlist in it.
+      </div>
+      <div class="cm-actions">
+        <button type="button" class="btn btn-secondary" data-cm-close>Keep event</button>
+        <button type="button" class="btn btn-danger-solid" id="cm-confirm"><svg class="i"><use href="#i-trash"/></svg>Cancel event</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Navbar buttons (Discover / My events / Host event) open their page.
     document.querySelectorAll(".nav [data-url]").forEach(el =>
@@ -324,6 +371,46 @@
       t.querySelector(".toast-close").addEventListener("click", dismiss);
       setTimeout(dismiss, 5000);
     });
+
+    // Cancel-event popup: any <form data-cancel-event> asks here before it is sent.
+    (function () {
+      const overlay = document.getElementById("cancel-confirm");
+      const confirmBtn = document.getElementById("cm-confirm");
+      let pending = null;
+
+      function open(form) {
+        pending = form;
+        const d = form.dataset;
+        document.getElementById("cm-title").textContent = d.title || "this event";
+        document.getElementById("cm-when").textContent = d.when || "—";
+        document.getElementById("cm-venue").textContent = d.venue || "To be announced";
+        document.getElementById("cm-enlisted").textContent = d.enlisted || "—";
+        confirmBtn.disabled = false;
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        confirmBtn.focus();
+      }
+      function close() {
+        overlay.classList.remove("open");
+        document.body.style.overflow = "";
+        pending = null;
+      }
+
+      document.addEventListener("submit", e => {
+        const form = e.target.closest("form[data-cancel-event]");
+        if (!form) return;
+        e.preventDefault();   // show the popup instead of sending right away
+        open(form);
+      });
+      confirmBtn.addEventListener("click", () => {
+        if (!pending) return;
+        confirmBtn.disabled = true;   // no double submits
+        pending.submit();             // .submit() skips the listener above, so it is sent for real
+      });
+      overlay.querySelectorAll("[data-cm-close]").forEach(b => b.addEventListener("click", close));
+      overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape" && overlay.classList.contains("open")) close(); });
+    })();
   </script>
   {% block scripts %}{% endblock %}
 </body>

@@ -119,7 +119,9 @@
               <a class="btn btn-secondary" href="{% url 'event_detail' event.id %}"><svg class="i"><use href="#i-orgs"/></svg>Roster</a>
               {% if event.status == 'Upcoming' %}
                 <a class="btn btn-primary" href="{% url 'edit_event' event.id %}"><svg class="i"><use href="#i-edit"/></svg>Edit</a>
-                <form method="post" action="{% url 'cancel_event' event.id %}" onsubmit="return confirm('Cancel this event?');">
+                <form method="post" action="{% url 'cancel_event' event.id %}" data-cancel-event
+                      data-title="{{ event.title }}" data-when="{{ event.start_full }}"
+                      data-venue="{{ event.venue }}" data-enlisted="{{ event.taken }} / {{ event.capacity }}">
                   {% csrf_token %}
                   <button type="submit" class="btn btn-danger">Cancel</button>
                 </form>

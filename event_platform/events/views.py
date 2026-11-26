@@ -275,15 +275,23 @@ def cancel_event_view(request, event_id):
     if not request.session.get('user_id'):
         return redirect('login')
 
-    event = get_event_by_id(event_id)
+    try:
+        event = get_event_by_id(event_id)
+    except InvalidId as exc:
+        raise Http404("Event not found") from exc
+    if event is None:
+        raise Http404("Event not found")
 
-    if event['organizationID'] != ObjectId(request.session.get('profile_id')):
+    if str(event.get('organizationID')) != request.session.get('profile_id'):
         messages.error(request, 'You cannot cancel this event.')
         return redirect('org_event_list')
 
     if request.method == 'POST':
-        update_event(event_id, { "status": "Cancelled" })
-        messages.success(request, 'Event cancelled successfully.')
+        if event.get('status') in ('Cancelled', 'Completed'):
+            messages.error(request, 'This event can no longer be cancelled.')
+        else:
+            update_event(event_id, {'status': 'Cancelled'})
+            messages.success(request, f'"{event.get("eventName", "Event")}" was cancelled.')
 
     return redirect('org_event_list')
 

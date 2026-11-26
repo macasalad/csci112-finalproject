@@ -30,8 +30,9 @@
   <div class="card-actions">
     {% if not read_only and event.status != 'Cancelled' and event.status != 'Completed' %}
       <a class="btn-sm" href="{% url 'edit_event' event_id=event_id %}"><svg class="i"><use href="#i-edit"/></svg>Edit</a>
-      <form method="POST" action="{% url 'cancel_event' event_id=event_id %}"
-            onsubmit="return confirm('Cancel “{{ event.eventName|escapejs }}”? Participants will no longer see it in available events.');">
+      <form method="POST" action="{% url 'cancel_event' event_id=event_id %}" data-cancel-event
+            data-title="{{ event.eventName }}" data-when="{{ event.startTime|local_dt|date:'D, M j, Y · g:i A' }}"
+            data-venue="{{ event.location }}" data-enlisted="{{ event.currentParticipants|default:0 }} / {{ event.maxParticipants }}">
         {% csrf_token %}
         <button type="submit" class="btn-sm danger"><svg class="i"><use href="#i-trash"/></svg>Cancel</button>
       </form>
