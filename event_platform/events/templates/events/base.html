@@ -56,10 +56,20 @@
     .icon-btn:hover { color: var(--navy); }
 
     /* ---------- Flash messages ---------- */
-    .flash-wrap { padding: 20px var(--gutter) 0; display: grid; gap: 10px; }
-    .flash { border-radius: 12px; padding: 16px 22px; font-size: 17px; font-weight: 600; background: #e8f0fd; color: var(--blue); }
-    .flash.error { background: #fdecec; color: #a32121; }
-    .flash.success { background: var(--green-bg); color: var(--green); }
+    /* Floating toasts, top-right under the navbar. They don't push the page down. */
+    .toast-stack { position: fixed; top: 116px; right: clamp(20px, 5vw, 86px); z-index: 40; display: grid; gap: 12px; width: min(440px, calc(100vw - 40px)); }
+    .toast { display: flex; align-items: flex-start; gap: 14px; padding: 18px 18px 18px 20px; background: #fff; border: 1px solid var(--border); border-left: 5px solid var(--blue); border-radius: 14px; box-shadow: 0 14px 40px rgba(16,47,94,.16); font-size: 17px; font-weight: 600; color: var(--ink); line-height: 1.4; animation: toast-in .25s ease-out; transition: opacity .3s, transform .3s; }
+    .toast > svg { width: 24px; height: 24px; color: var(--blue); margin-top: 1px; }
+    .toast.error { border-left-color: var(--red); }
+    .toast.error > svg { color: var(--red); }
+    .toast.success { border-left-color: var(--green); }
+    .toast.success > svg { color: var(--green); }
+    .toast span { flex: 1; }
+    .toast-close { background: none; border: 0; color: var(--muted); padding: 2px; display: grid; place-items: center; border-radius: 6px; }
+    .toast-close:hover { color: var(--ink); background: var(--soft); }
+    .toast-close svg { width: 20px; height: 20px; }
+    .toast.hide { opacity: 0; transform: translateX(16px); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
 
     /* ---------- Hero ---------- */
     .hero { position: relative; overflow: hidden; background: var(--navy); color: #fff; padding: 0 var(--gutter); height: 312px; display: flex; align-items: center; justify-content: space-between; }
@@ -72,6 +82,10 @@
     .hero-stat { border-left: 1px solid rgba(255,255,255,.18); padding: 4px 0 4px 38px; min-width: 200px; margin-right: clamp(0px, 3vw, 60px); }
     .hero-stat b { display: block; font: 700 52px "Manrope", sans-serif; line-height: 1; }
     .hero-stat span { display: block; margin-top: 12px; font-size: 18px; color: #a9bddf; }
+
+    /* ---------- Simple page header (pages without a hero) ---------- */
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 40px var(--gutter) 0; }
+    .eyebrow { font-size: 14px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
 
     /* ---------- Search + filters ---------- */
     .search-zone { background: #fff; padding: 32px var(--gutter) 34px; border-bottom: 1px solid var(--border); }
@@ -199,6 +213,7 @@
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
   </svg>
 
@@ -235,19 +250,37 @@
   </header>
   {% endwith %}
 
-  {% if messages %}
-    <div class="flash-wrap">
-      {% for message in messages %}<div class="flash {{ message.level_tag }}">{{ message }}</div>{% endfor %}
-    </div>
-  {% endif %}
+  {# Pages that show messages themselves (e.g. inside a form) override this with an empty block. #}
+  {% block messages %}
+    {% if messages %}
+      <div class="toast-stack" role="status" aria-live="polite">
+        {% for message in messages %}
+          <div class="toast {{ message.level_tag }}">
+            <svg class="i"><use href="#i-{% if message.level_tag == 'success' %}check{% else %}info{% endif %}"/></svg>
+            <span>{{ message }}</span>
+            <button type="button" class="toast-close" aria-label="Dismiss"><svg class="i"><use href="#i-x"/></svg></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endblock %}
 
   {% block content %}{% endblock %}
+
+  {# Dialogs that sit on top of the page (create / edit event form). #}
+  {% block modal %}{% endblock %}
 
   <script>
     // Navbar buttons (Discover / My events / Host event) open their page.
     document.querySelectorAll(".nav [data-url]").forEach(el =>
       el.addEventListener("click", () => { location.href = el.dataset.url; })
     );
+
+    document.querySelectorAll(".toast").forEach(t => {
+      const dismiss = () => { t.classList.add("hide"); setTimeout(() => t.remove(), 300); };
+      t.querySelector(".toast-close").addEventListener("click", dismiss);
+      setTimeout(dismiss, 5000);
+    });
   </script>
   {% block scripts %}{% endblock %}
 </body>

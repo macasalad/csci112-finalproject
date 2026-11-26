@@ -174,44 +174,64 @@ def org_event_list_view(request):
 
 # ---------- Organizer: create / edit / cancel ----------
 
+def _parse_event_form(request):
+    """
+    Reads the create/edit form. Returns (data, error).
+    A blank or invalid field gives an error message instead of a crash.
+    """
+    try:
+        start_time = timezone.make_aware(datetime.strptime(request.POST.get('startTime', ''), '%Y-%m-%dT%H:%M'))
+        end_time = timezone.make_aware(datetime.strptime(request.POST.get('endTime', ''), '%Y-%m-%dT%H:%M'))
+    except ValueError:
+        return None, 'Please enter a valid start and end date and time.'
+
+    try:
+        max_participants = int(request.POST.get('maxParticipants', ''))
+    except ValueError:
+        return None, 'Maximum participants must be a whole number.'
+
+    data = {
+        'eventName': request.POST.get('title', '').strip(),
+        'description': request.POST.get('description', '').strip(),
+        'startTime': start_time,
+        'endTime': end_time,
+        'location': request.POST.get('venue', '').strip(),
+        'eventType': request.POST.get('type', '').strip(),
+        'maxParticipants': max_participants,
+        'openToAll': request.POST.get('openToAll') == 'on',
+    }
+
+    if not all([data['eventName'], data['description'], data['location'], data['eventType']]):
+        return None, 'Please fill in all fields.'
+    if max_participants < 1:
+        return None, 'Maximum participants must be at least 1.'
+    if start_time < timezone.localtime():
+        return None, 'Start time cannot be in the past.'
+    if end_time <= start_time:
+        return None, 'End time must be later than start time.'
+
+    return data, None
+
+
 def create_event_view(request):
     if not request.session.get('user_id'):
         return redirect('login')
 
     if request.session.get('role') != 'organizer':
-        messages.error(request, 'Only organizers can create events.')
-        return redirect('home')
+        messages.error(request, 'Only organizers can host events.')
+        return redirect('event_list')
 
     if request.method == 'POST':
-        start_time = timezone.make_aware(datetime.strptime(
-            request.POST.get('startTime'),
-            '%Y-%m-%dT%H:%M'
-        ))
-        end_time = timezone.make_aware(datetime.strptime(
-            request.POST.get('endTime'),
-            '%Y-%m-%dT%H:%M'
-        ))
-
-        if start_time < timezone.localtime():
-            messages.error(request, 'Start time cannot be in the past.')
-        elif end_time < start_time:
-            messages.error(request, 'End time cannot be earlier than start time.')
+        data, error = _parse_event_form(request)
+        if error:
+            messages.error(request, error)
         else:
-            event = {
-                'eventName': request.POST.get('title', '').strip(),
-                'description': request.POST.get('description', '').strip(),
-                'startTime': start_time,
-                'endTime': end_time,
-                'location': request.POST.get('venue', '').strip(),
-                'eventType': request.POST.get('type', '').strip(),
-                'maxParticipants': int(request.POST.get('maxParticipants')),
+            create_event({
+                **data,
                 'currentParticipants': 0,
-                'openToAll': request.POST.get('openToAll') == 'on',
                 'organizationID': ObjectId(request.session.get('profile_id')),
                 'status': 'Upcoming'
-            }
-
-            create_event(event)
+            })
             messages.success(request, 'Event created successfully.')
             return redirect('org_event_list')
 
@@ -231,33 +251,11 @@ def edit_event_view(request, event_id):
         return redirect('event_list')
 
     if request.method == 'POST':
-        start_time = timezone.make_aware(datetime.strptime(
-            request.POST.get('startTime'),
-            '%Y-%m-%dT%H:%M'
-        ))
-        end_time = timezone.make_aware(datetime.strptime(
-            request.POST.get('endTime'),
-            '%Y-%m-%dT%H:%M'
-        ))
-
-        if start_time < timezone.localtime():
-            messages.error(request, 'Start time cannot be in the past.')
-        elif end_time < start_time:
-            messages.error(request, 'End time cannot be earlier than start time.')
+        data, error = _parse_event_form(request)
+        if error:
+            messages.error(request, error)
         else:
-            updated_data = {
-                'eventName': request.POST.get('title', '').strip(),
-                'description': request.POST.get('description', '').strip(),
-                'startTime': start_time,
-                'endTime': end_time,
-                'location': request.POST.get('venue', '').strip(),
-                'eventType': request.POST.get('type', '').strip(),
-                'maxParticipants': int(request.POST.get('maxParticipants')),
-                'openToAll': request.POST.get('openToAll') == 'on',
-                'status': request.POST.get('status')
-            }
-
-            update_event(event_id, updated_data)
+            update_event(event_id, {**data, 'status': request.POST.get('status') or event.get('status')})
             messages.success(request, 'Event updated successfully.')
             return redirect('event_detail', event_id=event_id)
 
@@ -287,6 +285,9 @@ def cancel_event_view(request, event_id):
 
     return redirect('org_event_list')
 
+
+# ---------- Event detail ----------
+# Both versions from your file are kept; use whichever one urls.py points to.
 
 def event_detail_view(request, event_id):
     update_event_statuses()
