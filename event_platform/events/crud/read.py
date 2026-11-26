@@ -1,6 +1,8 @@
-from database.db_collections import events, registrations, participants
+from database.db_collections import events
+from registrations.crud.read import get_registered_event_ids
 from bson import ObjectId
 import re
+
 
 SORT_OPTIONS = {
     'date_asc': ('startTime', 1),
@@ -9,15 +11,18 @@ SORT_OPTIONS = {
     'name_desc': ('eventName', -1)
 }
 
+
 def get_all_events():
     return list(events.find({
         "status": { "$ne": "Cancelled" }
     }))
 
+
 def get_event_by_id(event_id):
     return events.find_one({
         "_id": ObjectId(event_id)
     })
+
 
 def get_upcoming_events():
     return list(events.find({"status": "Upcoming"}).sort("startTime", 1))
@@ -64,30 +69,8 @@ def get_events_by_organization(org_id, filters=None):
     return _find_with_filters({ "organizationID": ObjectId(org_id) }, filters)
 
 
-def get_registered_event_ids(participant_id):
-    return {
-        r['eventID']
-        for r in registrations.find({ "participantID": ObjectId(participant_id) }, { "eventID": 1 })
-    }
-
-
 def get_registered_events(participant_id, filters=None):
     event_ids = list(get_registered_event_ids(participant_id))
     if not event_ids:
         return []
     return _find_with_filters({ "_id": { "$in": event_ids } }, filters)
-
-
-def get_event_participants(event_id):
-    registered = list(registrations.find({
-        "eventID": ObjectId(event_id)
-    }))
-
-    participant_ids = [
-        registration['participantID']
-        for registration in registered
-    ]
-
-    return list(participants.find({
-        "_id": { "$in": participant_ids }
-    }))
