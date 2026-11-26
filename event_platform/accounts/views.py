@@ -20,7 +20,7 @@ def home(request):
     if not request.session.get('user_id'):
         return redirect('login')
 
-    return render(request, 'home.html')
+    return redirect('event_list')
 
 def _render_register(request, role, error=None):
     is_post = request.method == 'POST'
@@ -136,7 +136,7 @@ def login(request):
                 if participant:
                     request.session['name'] = participant['firstName'] + " " + participant['lastName']
 
-            return redirect('home')
+            return redirect('event_list')
 
         return render(request, 'login.html', {
             'error': 'Invalid email or password.',
@@ -151,7 +151,7 @@ def logout(request):
 
 def edit_profile(request):
     if not request.session.get('user_id'):
-        return redirect('home')
+        return redirect('event_list')
 
     role = request.session.get('role')
     profile_id = request.session.get('profile_id')
@@ -162,11 +162,11 @@ def edit_profile(request):
     elif role == 'organizer':
         profile = get_organizer_by_id(profile_id)
     else:
-        return redirect('home')
+        return redirect('event_list')
 
     if not profile:
         messages.error(request, 'Profile not found.')
-        return redirect('home')
+        return redirect('event_list')
 
     context = {
         'profile': profile,
@@ -218,6 +218,6 @@ def edit_profile(request):
         update_user(user_id, {'email': email})
 
         messages.success(request, 'Profile updated successfully!')
-        return redirect('home')
+        return redirect('event_list')
 
     return render(request, 'edit_profile.html', context)

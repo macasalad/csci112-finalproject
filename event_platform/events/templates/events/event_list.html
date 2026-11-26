@@ -206,14 +206,27 @@
     </nav>
 
     <div class="nav-user">
-      <div class="avatar">KP</div>
+      <div class="avatar">{{ request.session.name|first }}</div>
+  
       <div>
-        <div class="user-name">Kiko Pangilinan</div>
-        <div class="user-role">Participant</div>
+          <div class="user-name">{{ request.session.name }}</div>
+          <div class="user-role">{{ request.session.role|title }}</div>
       </div>
-      <button class="icon-btn" title="Profile"><svg class="i"><use href="#i-user"/></svg></button>
-      <a class="icon-btn" href="#" title="Log out"><svg class="i"><use href="#i-logout"/></svg></a>
-    </div>
+  
+      <a class="icon-btn"
+         href="{% url 'edit_profile' %}"
+         title="Profile"
+         aria-label="Edit profile">
+          <svg class="i"><use href="#i-user"/></svg>
+      </a>
+  
+      <a class="icon-btn"
+         href="{% url 'logout' %}"
+         title="Log out"
+         aria-label="Log out">
+          <svg class="i"><use href="#i-logout"/></svg>
+      </a>
+  </div>
   </header>
 
   <!-- ========== HERO ========== -->
@@ -337,44 +350,69 @@
     }
 
     /* ---- Card ---- */
+    /* ---- Card ---- */
     function cardHTML(e) {
-      const p = parts(e.date), full = isFull(e);
-      return `
+    const p = parts(e.date);
+    const full = isFull(e);
+
+    return `
       <article class="card" data-id="${e.id}">
+
         <div class="tags">
           <span class="chip org">${esc(e.org)}</span>
-          <span class="chip t-${e.type.toLowerCase()}">${esc(e.type)}</span>
+          <span class="chip t-${e.type.toLowerCase()}">
+            ${esc(e.type)}
+          </span>
           <span class="chip status">Upcoming</span>
         </div>
+
         <div class="card-main">
-          <div class="datebox"><span class="m">${MONTHS[p.m]}</span><span class="d">${String(p.d).padStart(2,"0")}</span><span class="y">${p.y}</span></div>
+          <div class="datebox">
+            <span class="m">${MONTHS[p.m]}</span>
+            <span class="d">${String(p.d).padStart(2, "0")}</span>
+            <span class="y">${p.y}</span>
+          </div>
+
           <div class="info">
             <h3>${esc(e.title)}</h3>
             <div class="time">${e.start} – ${e.end}</div>
             <span class="aud">${esc(e.audience)}</span>
           </div>
-    {% if messages %}
-        {% for message in messages %}
-            <p>{{ message }}</p>
-        {% endfor %}
-    {% endif %}
-    
-    {% for event in events %}
-
-        <div>
-            <h2><a href="{% url 'event_detail' event.id %}">{{ event.title }}</a></h2>
-            <p>{{ event.description }}</p>
-            <p>{{ event.venue }}</p>
-            <p>{{ event.status }}</p>
         </div>
-        <div class="venue">${icon("pin")}<b>${esc(e.venue)}</b><span class="sep"></span><span class="org">${esc(e.orgName)}</span></div>
-        <div class="cap"><span>Capacity filled</span><b class="${full ? "full" : ""}">${e.taken} / ${e.capacity} seats (${pct(e)}%)</b></div>
-        <div class="bar ${full ? "full" : ""}"><i style="width:${Math.min(100, pct(e))}%"></i></div>
-        <div class="avail ${full ? "full" : ""}">${full ? "Registration is currently full" : left(e) + " seats available"}</div>
+
+        <div class="venue">
+          ${icon("pin")}
+          <b>${esc(e.venue)}</b>
+          <span class="sep"></span>
+          <span class="org">${esc(e.orgName)}</span>
+        </div>
+
+        <div class="cap">
+          <span>Capacity filled</span>
+          <b class="${full ? "full" : ""}">
+            ${e.taken} / ${e.capacity} seats (${pct(e)}%)
+          </b>
+        </div>
+
+        <div class="bar ${full ? "full" : ""}">
+          <i style="width:${Math.min(100, pct(e))}%"></i>
+        </div>
+
+        <div class="avail ${full ? "full" : ""}">
+          ${
+            full
+              ? "Registration is currently full"
+              : left(e) + " seats available"
+          }
+        </div>
+
         <div class="card-spacer"></div>
+
         ${actionBtn(e, false)}
-      </article>`;
-    }
+
+      </article>
+    `;
+  }
 
     /* ---- Render list ---- */
     function render() {
