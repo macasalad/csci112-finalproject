@@ -110,7 +110,7 @@
 
           <div class="cap"><span>Capacity filled</span><b class="{% if event.full %}full{% endif %}">{{ event.taken }} / {{ event.capacity }} seats ({{ event.pct }}%)</b></div>
           <div class="bar {% if event.full %}full{% endif %}"><i style="width:{{ event.bar }}%"></i></div>
-          <div class="avail {% if event.full %}full{% endif %}">{% if event.full %}Registration is currently full{% else %}{{ event.left }} seats available{% endif %}</div>
+          <div class="avail {% if event.full %}full{% endif %}">{% if event.full %}Registration is currently full{% else %}{{ event.left }} seat{{ event.left|pluralize }} available{% endif %}</div>
 
           <div class="card-spacer"></div>
 
@@ -128,6 +128,13 @@
               {% endif %}
             {% else %}
               <a class="btn btn-secondary" href="{% url 'event_detail' event.id %}">View details</a>
+              {% if event.status == 'Upcoming' %}
+                <form method="post" action="{% url 'delist' event.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="org_event_list">
+                  <button type="submit" class="btn btn-danger-solid">Delist</button>
+                </form>
+              {% endif %}
             {% endif %}
           </div>
         </article>

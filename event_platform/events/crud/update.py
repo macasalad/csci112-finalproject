@@ -28,3 +28,19 @@ def update_event_statuses():
         },
         { '$set': { 'status': 'Completed' } }
     )
+
+def add_participant_count(event_id):
+    return events.update_one(
+        {
+            "_id": ObjectId(event_id),
+            "status": "Upcoming",
+            "$expr": { "$lt": [ { "$ifNull": ["$currentParticipants", 0] }, "$maxParticipants" ] }
+        },
+        { "$inc": { "currentParticipants": 1 } }
+    )
+
+def remove_participant_count(event_id):
+    return events.update_one(
+        { "_id": ObjectId(event_id), "currentParticipants": { "$gt": 0 } },
+        { "$inc": { "currentParticipants": -1 } }
+    )

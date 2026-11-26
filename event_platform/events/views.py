@@ -7,7 +7,7 @@ from django.http import Http404
 from django.shortcuts import render, redirect
 from django.utils import timezone
 
-from accounts.crud.read import get_organizer_by_id
+from accounts.crud.read import get_organizer_by_id, get_participant_by_id
 from .crud.create import create_event
 from .crud.read import (
     get_event_by_id,
@@ -15,9 +15,9 @@ from .crud.read import (
     get_events_by_organization,
     get_registered_events,
     get_registered_event_ids,
-    get_event_participants
 )
 from .crud.update import update_event, update_event_statuses
+from registrations.crud.read import get_registered_event_ids, get_event_participants
 from .form_choices import STATUSES, TYPES
 
 
@@ -76,6 +76,7 @@ def _card(doc, enlisted_ids=frozenset(), org_cache=None):
         'title': doc.get('eventName', ''),
         'desc': doc.get('description', ''),
         'venue': doc.get('location', ''),
+        'openToAll': bool(doc.get('openToAll')),
         'audience': 'Open to all Ateneans' if doc.get('openToAll') else 'Members only',
         'capacity': capacity,
         'taken': taken,
@@ -113,9 +114,6 @@ def _filters_from_request(request):
 
     return filters, min_date, max_date
 
-
-# ---------- Discover ----------
-
 def event_list(request):
     if not request.session.get('user_id'):
         return redirect('login')
@@ -128,6 +126,13 @@ def event_list(request):
 
     org_cache = {}
     cards = [_card(doc, enlisted, org_cache) for doc in get_upcoming_events()]
+
+    # Members-only events from organizations the student isn't in: disabled button on Discover
+    if role == 'participant':
+        participant = get_participant_by_id(profile_id)
+        my_orgs = participant.get('organizations', []) if participant else []
+        for card in cards:
+            card['locked'] = not card['openToAll'] and not card['enlisted'] and card['orgName'] not in my_orgs
 
     return render(request, 'events/event_list.html', {
         'events_data': cards,

@@ -111,10 +111,18 @@
 {% block scripts %}
   {{ events_data|json_script:"events-data" }}
   {{ can_enlist|json_script:"can-enlist" }}
+  {# Enlist / Delist buttons submit this form (see setEnlisted below) #}
+  <form method="post" id="reg-form" hidden>
+    {% csrf_token %}
+  </form>
   <script>
     /* Real events from Django (see event_list in views.py) */
     const EVENTS = JSON.parse(document.getElementById("events-data").textContent);
     const CAN_ENLIST = JSON.parse(document.getElementById("can-enlist").textContent);
+
+    /* Enlist / delist URLs (registrations app). EVENT_ID is swapped for the real id. */
+    const ENLIST_URL = "{% url 'enlist' 'EVENT_ID' %}";
+    const DELIST_URL = "{% url 'delist' 'EVENT_ID' %}";
 
     const $ = id => document.getElementById(id);
     const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -140,10 +148,10 @@
       // Organizers can't enlist: give them a "View details" button instead.
       if (!CAN_ENLIST) return inModal ? "" : `<button class="btn btn-secondary" data-act="details">View details</button>`;
       if (e.enlisted) return inModal
-        ? `<button class="btn btn-delist" data-act="delist">Delist from event</button>`
-        : `<button class="btn btn-enlisted" data-act="none">${icon("check")} Enlisted</button>`;
+        ? `<button class="btn btn-danger-solid" data-act="delist">Delist from event</button>`
+        : `<button class="btn btn-danger-solid" data-act="delist">Delist</button>`;
       if (isFull(e)) return `<button class="btn btn-full" disabled>Event full</button>`;
-      return `<button class="btn btn-primary" data-act="enlist">${icon("userplus")} Enlist</button>`;
+      if (e.locked) return `<button class="btn btn-full" disabled title="Only members of ${esc(e.orgName)} can enlist">Members only</button>`;      return `<button class="btn btn-primary" data-act="enlist">${icon("userplus")} Enlist</button>`;
     }
 
     /* ---- Card (same markup as the cards on My events) ---- */
@@ -167,7 +175,7 @@
           <div class="venue">${icon("pin")}<b>${esc(e.venue)}</b><span class="sep"></span><span class="org">${esc(e.orgName)}</span></div>
           <div class="cap"><span>Capacity filled</span><b class="${full ? "full" : ""}">${e.taken} / ${e.capacity} seats (${pct(e)}%)</b></div>
           <div class="bar ${full ? "full" : ""}"><i style="width:${Math.min(100, pct(e))}%"></i></div>
-          <div class="avail ${full ? "full" : ""}">${full ? "Registration is currently full" : left(e) + " seats available"}</div>
+          <div class="avail ${full ? "full" : ""}">${full ? "Registration is currently full" : left(e) + (left(e) === 1 ? " seat available" : " seats available")}</div>
           <div class="card-spacer"></div>
           ${actionBtn(e, false)}
         </article>`;
@@ -217,12 +225,11 @@
     }
     function closeModal() { $("overlay").classList.remove("open"); document.body.style.overflow = ""; openId = null; }
 
-    /* ---- Enlist / Delist (front-end only for now) ---- */
+    /* ---- Enlist / Delist: a normal form post; the page reloads with a message ---- */
     function setEnlisted(id, state) {
-      const e = EVENTS.find(x => x.id === id); if (!e) return;
-      if (state && !e.enlisted && !isFull(e)) { e.enlisted = true; e.taken++; }
-      else if (!state && e.enlisted) { e.enlisted = false; e.taken--; }
-      render();
+      const form = $("reg-form");
+      form.action = (state ? ENLIST_URL : DELIST_URL).replace("EVENT_ID", id);
+      form.submit();
     }
 
     /* ---- Listeners ---- */
@@ -234,6 +241,7 @@
       const btn = ev.target.closest("[data-act]");
       if (btn) {
         if (btn.dataset.act === "enlist") setEnlisted(id, true);
+        if (btn.dataset.act === "delist") setEnlisted(id, false);
         if (btn.dataset.act === "details") openModal(id);
         return;
       }
@@ -242,8 +250,8 @@
     $("m-action").addEventListener("click", ev => {
       const btn = ev.target.closest("[data-act]"); if (!btn) return;
       const id = openId;
-      if (btn.dataset.act === "delist") { setEnlisted(id, false); closeModal(); }
-      if (btn.dataset.act === "enlist") { setEnlisted(id, true); openModal(id); }
+      if (btn.dataset.act === "delist") setEnlisted(id, false);
+      if (btn.dataset.act === "enlist") setEnlisted(id, true);
     });
     $("m-close").addEventListener("click", closeModal);
     $("overlay").addEventListener("click", ev => { if (ev.target === $("overlay")) closeModal(); });
