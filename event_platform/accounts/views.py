@@ -169,10 +169,12 @@ def edit_profile(request):
         return redirect('event_list')
 
     context = {
-        'profile': profile,
-        'role': role,
-        'courses': COURSES,
-        'all_organizations': ORGANIZATIONS
+    'profile': profile,
+    'role': role,
+    'courses': COURSES,
+    'all_organizations': ORGANIZATIONS,
+    'selected_orgs': (request.POST.getlist('organizations')
+                      if request.method == 'POST' else profile.get('organizations', [])),
     }
 
     if request.method == 'POST':
