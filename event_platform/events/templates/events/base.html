@@ -131,7 +131,8 @@
     .card.static { cursor: default; }
     .card.static:hover { transform: none; }
     .tags { display: flex; align-items: center; gap: 5px; margin-bottom: 14px; }
-    .chip { font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; white-space: nowrap; }
+    /* Default gray background, so any event type without its own color below still gets one */
+    .chip { font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; white-space: nowrap; background: #eef1f5; color: #52627a; }
     .chip.org { background: var(--navy); color: #fff; letter-spacing: .1em; }
     .chip.status { margin-left: auto; border: 1px solid #9db5e0; color: var(--blue); background: #fff; padding: 3px 6px; }
     .chip.status.st-ongoing { border-color: var(--green-border); color: var(--green); }
@@ -142,6 +143,7 @@
     .t-competition { background: #fdebd9; color: #c4641a; }
     .t-conference { background: #fde6ea; color: #c42a4a; }
     .t-social { background: #dff5e8; color: #13803f; }
+    .t-engagement { background: #ddf4f6; color: #0e7c86; }
 
     .card-main { display: flex; gap: 12px; align-items: flex-start; min-height: 76px; }
     .datebox { width: 56px; height: 74px; border-radius: 8px; background: linear-gradient(160deg, #1d4a98, #163b7d); color: #fff; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
