@@ -2,7 +2,6 @@ from database.db_collections import registrations, participants
 from bson import ObjectId
 
 def get_registration(event_id, participant_id):
-    # Any status: a "Cancelled" one is reused if the student enlists again
     return registrations.find_one({
         "eventId": ObjectId(event_id),
         "participantId": ObjectId(participant_id)
@@ -32,7 +31,6 @@ def get_event_participants(event_id):
         for participant in participants.find({ "_id": { "$in": participant_ids } })
     }
 
-    # Keep the order people enlisted in, and show when each one enlisted
     return [
         { **found[registration['participantId']], 'registeredAt': registration.get('registeredAt') }
         for registration in registered

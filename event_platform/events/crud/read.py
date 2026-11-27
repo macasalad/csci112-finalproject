@@ -3,7 +3,6 @@ from registrations.crud.read import get_registered_event_ids
 from bson import ObjectId
 import re
 
-
 SORT_OPTIONS = {
     'date_asc': ('startTime', 1),
     'date_desc': ('startTime', -1),
@@ -11,22 +10,18 @@ SORT_OPTIONS = {
     'name_desc': ('eventName', -1)
 }
 
-
 def get_all_events():
     return list(events.find({
         "status": { "$ne": "Cancelled" }
     }))
-
 
 def get_event_by_id(event_id):
     return events.find_one({
         "_id": ObjectId(event_id)
     })
 
-
 def get_upcoming_events():
     return list(events.find({"status": "Upcoming"}).sort("startTime", 1))
-
 
 def _find_with_filters(query, filters=None):
     """Shared by the organizer and participant "My events" lists."""
@@ -64,10 +59,8 @@ def _find_with_filters(query, filters=None):
     sort_field, sort_order = SORT_OPTIONS.get(filters.get('sort'), ('startTime', 1))
     return list(events.find(query).sort(sort_field, sort_order))
 
-
 def get_events_by_organization(org_id, filters=None):
     return _find_with_filters({ "organizationID": ObjectId(org_id) }, filters)
-
 
 def get_registered_events(participant_id, filters=None):
     event_ids = list(get_registered_event_ids(participant_id))

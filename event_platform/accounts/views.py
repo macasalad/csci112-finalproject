@@ -1,13 +1,17 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password, check_password
-from .crud.create import create_participant, create_organizer, create_user
+from .crud.create import (
+    create_participant,
+    create_organizer,
+    create_user
+)
 from .crud.read import (
     get_user_by_email,
     get_participant_by_id,
     get_participant_by_student_id,
     get_organizer_by_id,
-    get_organizer_by_name
+    get_organizer_by_name,
 )
 from .crud.update import (
     update_participant,
@@ -24,6 +28,7 @@ def home(request):
 
 def _render_register(request, role, error=None):
     is_post = request.method == 'POST'
+
     return render(request, 'register.html', {
         'error': error,
         'role': role,
@@ -34,7 +39,6 @@ def _render_register(request, role, error=None):
     })
 
 def register(request):
-    # /register/ on its own just opens the student tab.
     return redirect('participant_register')
 
 def participant_register(request):
@@ -48,7 +52,6 @@ def participant_register(request):
     last_name = request.POST.get('lastName', '').strip()
     course = request.POST.get('course', '').strip()
 
-    # The form uses `novalidate`, so the browser won't block empty fields.
     if not all([email, id_number, password, first_name, last_name, course]):
         return _render_register(request, 'student', 'Please fill in all required fields.')
 
@@ -169,12 +172,12 @@ def edit_profile(request):
         return redirect('event_list')
 
     context = {
-    'profile': profile,
-    'role': role,
-    'courses': COURSES,
-    'all_organizations': ORGANIZATIONS,
-    'selected_orgs': (request.POST.getlist('organizations')
-                      if request.method == 'POST' else profile.get('organizations', [])),
+        'profile': profile,
+        'role': role,
+        'courses': COURSES,
+        'all_organizations': ORGANIZATIONS,
+        'selected_orgs': (request.POST.getlist('organizations')
+                        if request.method == 'POST' else profile.get('organizations', [])),
     }
 
     if request.method == 'POST':

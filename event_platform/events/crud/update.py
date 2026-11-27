@@ -2,7 +2,6 @@ from database.db_collections import events
 from django.utils import timezone
 from bson import ObjectId
 
-
 def update_event(event_id, updated_data):
     return events.update_one(
         { "_id": ObjectId(event_id) },
