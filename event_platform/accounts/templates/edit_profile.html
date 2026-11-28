@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit profile · Blueboard{% endblock %}
+
+{# Messages are shown inside the form panel below. #}
+{% block messages %}{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">{% if role == 'organizer' %}Organizer account{% else %}Participant account{% endif %}</span>
+    <h1>Edit profile</h1>
+    <p>Update your account details.</p>
+  </div>
+
+  <form method="POST" class="panel">
+    {% csrf_token %}
+
+    {% if messages %}
+      <div class="messages" role="alert">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}"><svg class="i"><use href="#i-info"/></svg>{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {# Each field shows what was just submitted, otherwise what's saved. #}
+    {% if role == 'participant' %}
+      <h2 class="panel-title">Participant information</h2>
+
+      <div class="form-grid">
+        <label class="field">
+          <span>First name</span>
+          <input class="control" type="text" name="firstName" required
+                 value="{% firstof request.POST.firstName profile.firstName %}">
+        </label>
+
+        <label class="field">
+          <span>Last name</span>
+          <input class="control" type="text" name="lastName" required
+                 value="{% firstof request.POST.lastName profile.lastName %}">
+        </label>
+
+        <label class="field">
+          <span>ID number</span>
+          <input class="control" type="text" name="idNumber" required placeholder="e.g. 230000"
+                 value="{% firstof request.POST.idNumber profile.idNumber %}">
+        </label>
+
+        <label class="field">
+          <span>Year level</span>
+          {% firstof request.POST.year profile.year as current_year %}
+          <select class="control" name="year" required>
+            {% for y in "12345" %}
+              <option value="{{ y }}" {% if current_year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="field span-2">
+          <span>Course</span>
+          {% firstof request.POST.course profile.course as current_course %}
+          <select class="control" name="course" required>
+            <option value="" disabled {% if not current_course %}selected{% endif %}>Select your course</option>
+            {% for course in courses %}
+              <option value="{{ course }}" {% if current_course == course %}selected{% endif %}>{{ course }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="field span-2">
+          <span>Student email</span>
+          <input class="control" type="email" name="email" required placeholder="name@student.ateneo.edu"
+                 value="{% firstof request.POST.email profile.email %}">
+        </label>
+
+        <div class="field span-2">
+          <span>Organization memberships</span>
+          <div class="checklist">
+            <div class="checklist-search">
+              <svg class="i"><use href="#i-search"/></svg>
+              <input class="control" type="text" id="org-search" placeholder="Search organizations" aria-label="Search organizations">
+            </div>
+            <div class="checklist-items" id="org-list">
+              {% for organization in all_organizations %}
+                <label>
+                  <input type="checkbox" name="organizations" value="{{ organization }}"
+                         {% if organization in selected_orgs %}checked{% endif %}>
+                  {{ organization }}
+                </label>
+              {% endfor %}
+              <div class="checklist-empty" id="org-empty" hidden>No organizations match your search.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    {% elif role == 'organizer' %}
+      <h2 class="panel-title">Organizer information</h2>
+
+      <div class="form-grid">
+        <label class="field span-2">
+          <span>Organization</span>
+          {% firstof request.POST.organizationName profile.organizationName as current_org %}
+          <select class="control" name="organizationName" required>
+            {% for organization in all_organizations %}
+              <option value="{{ organization }}" {% if current_org == organization %}selected{% endif %}>{{ organization }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="field span-2">
+          <span>Organization email</span>
+          <input class="control" type="email" name="email" required placeholder="org@ateneo.edu"
+                 value="{% firstof request.POST.email profile.email %}">
+        </label>
+      </div>
+    {% endif %}
+
+    <div class="form-actions">
+      <a class="btn btn-secondary" href="{% url 'home' %}">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Organization search (only on the participant form)
+    const orgSearch = document.getElementById("org-search");
+    if (orgSearch) {
+      orgSearch.addEventListener("input", () => {
+        const q = orgSearch.value.trim().toLowerCase();
+        let shown = 0;
+        document.querySelectorAll("#org-list label").forEach(label => {
+          const match = label.textContent.toLowerCase().includes(q);
+          label.hidden = !match;
+          if (match) shown++;
+        });
+        document.getElementById("org-empty").hidden = shown > 0;
+      });
+    }
+  </script>
+{% endblock %}

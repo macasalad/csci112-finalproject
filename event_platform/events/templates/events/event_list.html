@@ -1,28 +1,263 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Events</title>
-</head>
-<body>
+{% extends 'events/base.html' %}
 
-    <h1>Available Events</h1>
+{% block title %}Discover · Blueboard{% endblock %}
 
-    {% for event in events %}
+{% block extra_style %}
+    /* ---------- Event detail popup (Discover only) ---------- */
+    .overlay { position: fixed; inset: 0; z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10,30,60,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .overlay.open { display: flex; }
+    .modal { width: 100%; max-width: 460px; max-height: 94vh; overflow-y: auto; background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25); position: relative; }
+    .modal .tags { margin-bottom: 16px; padding-right: 30px; }
+    .modal .chip.status { margin-left: 0; border: 0; background: #e4edfd; color: #1a4fc4; padding: 4px 7px; }
+    .close { position: absolute; top: 20px; right: 20px; background: none; border: 0; color: #4a5672; padding: 2px; border-radius: 6px; }
+    .close:hover { background: var(--soft); }
+    .close svg { width: 16px; height: 16px; }
+    .modal h2 { font: 800 22px "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.15; }
+    .modal .desc { font-size: 11px; line-height: 1.55; color: var(--muted); margin: 8px 0 18px; }
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .fact { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+    .fact svg { color: var(--blue); width: 16px; height: 16px; }
+    .fact small { display: block; font-size: 8.5px; color: var(--muted); }
+    .fact b { font-size: 10px; font-weight: 700; }
+    .host { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); margin-top: 18px; padding-top: 14px; }
+    .host-logo { width: 38px; height: 38px; border-radius: 8px; background: var(--navy); color: #fff; font: 700 9px "Manrope", sans-serif; display: grid; place-items: center; overflow: hidden; }
+    .host small { display: block; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .host b { font-size: 11px; font-weight: 700; }
+    .notice { background: #e8f0fd; border-radius: 8px; padding: 11px 13px; margin: 14px 0; }
+    .notice b { display: block; color: var(--blue); font-size: 11px; font-weight: 700; margin-bottom: 2px; }
+    .notice span { color: #4a5672; font-size: 9.5px; }
+    @media (max-width: 560px) { .facts { grid-template-columns: 1fr; } }
+{% endblock %}
 
-        <div>
-            <h2>{{ event.eventName }}</h2>
-            <p>{{ event.description }}</p>
-            <p>{{ event.location }}</p>
-            <p>{{ event.status }}</p>
-        </div>
+{% block content %}
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow">Ateneo de Manila University</div>
+      <h1>Find your next campus event.</h1>
+    </div>
+    <div class="hero-stat">
+      <b id="hero-count">0</b>
+      <span>upcoming events</span>
+    </div>
+  </section>
 
-        <hr>
+  <!-- ========== SEARCH + FILTERS ========== -->
+  <section class="search-zone">
+    <label class="search">
+      <svg class="i"><use href="#i-search"/></svg>
+      <span class="sr-only">Search events</span>
+      <input type="text" id="q" placeholder="Search by event title or keyword">
+    </label>
+    <div class="filters">
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-filter"/></svg>
+        <select id="f-type"><option value="">All types</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-orgs"/></svg>
+        <select id="f-org"><option value="">All organizations</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+      <div class="select-wrap">
+        <svg class="i lead"><use href="#i-cal"/></svg>
+        <select id="f-date"><option value="">Any date</option></select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+    </div>
+  </section>
 
-    {% empty %}
+  <!-- ========== LISTING ========== -->
+  <main class="listing">
+    <div class="listing-head">
+      <h2>Upcoming events</h2>
+      <div class="select-wrap sort">
+        <svg class="i lead"><use href="#i-sliders"/></svg>
+        <select id="sort">
+          <option value="soon">Soonest first</option>
+          <option value="late">Latest first</option>
+          <option value="seats">Most seats available</option>
+        </select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
 
-        <p>No events found.</p>
+  <!-- ========== EVENT DETAIL MODAL ========== -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="tags" id="m-tags"></div>
+      <button class="close" id="m-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <h2 id="m-title"></h2>
+      <p class="desc" id="m-desc"></p>
+      <div class="facts">
+        <div class="fact"><svg class="i"><use href="#i-cal"/></svg><div><small>Date</small><b id="m-date"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-clock"/></svg><div><small>Time</small><b id="m-time"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-pin"/></svg><div><small>Venue</small><b id="m-venue"></b></div></div>
+        <div class="fact"><svg class="i"><use href="#i-orgs"/></svg><div><small>Availability</small><b id="m-avail"></b></div></div>
+      </div>
+      <div class="host">
+        <div class="host-logo" id="m-logo"></div>
+        <div><small>Hosted by</small><b id="m-org"></b></div>
+      </div>
+      <div class="notice"><b id="m-aud"></b><span id="m-aud-sub"></span></div>
+      <div id="m-action"></div>
+    </div>
+  </div>
+{% endblock %}
 
-    {% endfor %}
+{% block scripts %}
+  {{ events_data|json_script:"events-data" }}
+  {{ can_enlist|json_script:"can-enlist" }}
+  {# Enlist / Delist buttons submit this form (see setEnlisted below) #}
+  <form method="post" id="reg-form" hidden>
+    {% csrf_token %}
+  </form>
+  <script>
+    /* Real events from Django (see event_list in views.py) */
+    const EVENTS = JSON.parse(document.getElementById("events-data").textContent);
+    const CAN_ENLIST = JSON.parse(document.getElementById("can-enlist").textContent);
 
-</body>
-</html>
+    /* Enlist / delist URLs (registrations app). EVENT_ID is swapped for the real id. */
+    const ENLIST_URL = "{% url 'enlist' 'EVENT_ID' %}";
+    const DELIST_URL = "{% url 'delist' 'EVENT_ID' %}";
+
+    const $ = id => document.getElementById(id);
+    const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    const parts = d => { const [y,m,dd] = d.split("-").map(Number); return { y, m: m-1, d: dd }; };
+    const left = e => e.capacity - e.taken;
+    const isFull = e => e.capacity > 0 && left(e) <= 0;
+    const pct = e => e.capacity ? Math.round(e.taken / e.capacity * 100) : 0;
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+    const icon = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+
+    /* ---- Populate filter dropdowns from the data ---- */
+    function fillFilters() {
+      const add = (sel, values) => values.forEach(v => { const o = document.createElement("option"); o.value = v.value; o.textContent = v.label; $(sel).appendChild(o); });
+      add("f-type", [...new Set(EVENTS.map(e => e.type))].map(t => ({ value: t, label: t })));
+      add("f-org", [...new Set(EVENTS.map(e => e.orgName))].map(t => ({ value: t, label: t })));
+      const months = [...new Set(EVENTS.map(e => e.date.slice(0,7)))].sort();
+      add("f-date", months.map(m => { const [y,mo] = m.split("-").map(Number); return { value: m, label: `${MONTHS_LONG[mo-1]} ${y}` }; }));
+    }
+
+    /* ---- Action button (card + modal share this) ---- */
+    function actionBtn(e, inModal) {
+      // Organizers can't enlist: give them a "View details" button instead.
+      if (!CAN_ENLIST) return inModal ? "" : `<button class="btn btn-secondary" data-act="details">View details</button>`;
+      if (e.enlisted) return inModal
+        ? `<button class="btn btn-danger-solid" data-act="delist">Delist from event</button>`
+        : `<button class="btn btn-danger-solid" data-act="delist">Delist</button>`;
+      if (isFull(e)) return `<button class="btn btn-full" disabled>Event full</button>`;
+      if (e.locked) return `<button class="btn btn-full" disabled title="Only members of ${esc(e.orgName)} can enlist">Members only</button>`;      return `<button class="btn btn-primary" data-act="enlist">${icon("userplus")} Enlist</button>`;
+    }
+
+    /* ---- Card (same markup as the cards on My events) ---- */
+    function cardHTML(e) {
+      const full = isFull(e);
+      return `
+        <article class="card" data-id="${e.id}">
+          <div class="tags">
+            <span class="chip org">${esc(e.org)}</span>
+            <span class="chip t-${esc(e.typeClass)}">${esc(e.type)}</span>
+            <span class="chip status">${esc(e.status)}</span>
+          </div>
+          <div class="card-main">
+            <div class="datebox"><span class="m">${e.month}</span><span class="d">${e.day}</span><span class="y">${e.year}</span></div>
+            <div class="info">
+              <h3>${esc(e.title)}</h3>
+              <div class="time">${e.start} – ${e.end}</div>
+              <span class="aud">${esc(e.audience)}</span>
+            </div>
+          </div>
+          <div class="venue">${icon("pin")}<b>${esc(e.venue)}</b><span class="sep"></span><span class="org">${esc(e.orgName)}</span></div>
+          <div class="cap"><span>Capacity filled</span><b class="${full ? "full" : ""}">${e.taken} / ${e.capacity} seats (${pct(e)}%)</b></div>
+          <div class="bar ${full ? "full" : ""}"><i style="width:${Math.min(100, pct(e))}%"></i></div>
+          <div class="avail ${full ? "full" : ""}">${full ? "Registration is currently full" : left(e) + (left(e) === 1 ? " seat available" : " seats available")}</div>
+          <div class="card-spacer"></div>
+          ${actionBtn(e, false)}
+        </article>`;
+    }
+
+    /* ---- Render list ---- */
+    function render() {
+      $("hero-count").textContent = EVENTS.length;
+
+      const q = $("q").value.trim().toLowerCase();
+      const list = EVENTS.filter(e => {
+        if (q && !(e.title + " " + e.desc + " " + e.orgName + " " + e.venue).toLowerCase().includes(q)) return false;
+        if ($("f-type").value && e.type !== $("f-type").value) return false;
+        if ($("f-org").value && e.orgName !== $("f-org").value) return false;
+        if ($("f-date").value && !e.date.startsWith($("f-date").value)) return false;
+        return true;
+      });
+
+      const s = $("sort").value;
+      list.sort((a,b) => s === "late" ? b.date.localeCompare(a.date) : s === "seats" ? left(b) - left(a) : a.date.localeCompare(b.date));
+
+      $("grid").innerHTML = list.length ? list.map(cardHTML).join("") : `<div class="empty">No events match your search.</div>`;
+    }
+
+    /* ---- Modal ---- */
+    let openId = null;
+    function openModal(id) {
+      const e = EVENTS.find(x => x.id === id); if (!e) return;
+      openId = id;
+      const p = parts(e.date);
+      $("m-tags").innerHTML = `<span class="chip t-${esc(e.typeClass)}">${esc(e.type)}</span><span class="chip status">${esc(e.status)}</span>`;
+      $("m-title").textContent = e.title;
+      $("m-desc").textContent = e.desc;
+      $("m-date").textContent = `${MONTHS_LONG[p.m].slice(0,3)} ${p.d}, ${p.y}`;
+      $("m-time").textContent = `${e.start} – ${e.end}`;
+      $("m-venue").textContent = e.venue;
+      $("m-avail").textContent = isFull(e) ? "No slots remaining" : `${left(e)} slots remaining`;
+      $("m-org").textContent = e.orgName;
+      $("m-logo").textContent = e.org;
+      $("m-aud").textContent = e.audience;
+      $("m-aud-sub").textContent = e.audience === "Members only"
+        ? "Only verified members of the hosting organization can register."
+        : "Your registration is recorded separately and can be cancelled at any time.";
+      $("m-action").innerHTML = actionBtn(e, true);
+      $("overlay").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+    function closeModal() { $("overlay").classList.remove("open"); document.body.style.overflow = ""; openId = null; }
+
+    /* ---- Enlist / Delist: a normal form post; the page reloads with a message ---- */
+    function setEnlisted(id, state) {
+      const form = $("reg-form");
+      form.action = (state ? ENLIST_URL : DELIST_URL).replace("EVENT_ID", id);
+      form.submit();
+    }
+
+    /* ---- Listeners ---- */
+    ["q","f-type","f-org","f-date","sort"].forEach(id => $(id).addEventListener("input", render));
+
+    $("grid").addEventListener("click", ev => {
+      const card = ev.target.closest(".card"); if (!card) return;
+      const id = card.dataset.id;   // Mongo ids are strings: no "+" conversion
+      const btn = ev.target.closest("[data-act]");
+      if (btn) {
+        if (btn.dataset.act === "enlist") setEnlisted(id, true);
+        if (btn.dataset.act === "delist") setEnlisted(id, false);
+        if (btn.dataset.act === "details") openModal(id);
+        return;
+      }
+      openModal(id);
+    });
+    $("m-action").addEventListener("click", ev => {
+      const btn = ev.target.closest("[data-act]"); if (!btn) return;
+      const id = openId;
+      if (btn.dataset.act === "delist") setEnlisted(id, false);
+      if (btn.dataset.act === "enlist") setEnlisted(id, true);
+    });
+    $("m-close").addEventListener("click", closeModal);
+    $("overlay").addEventListener("click", ev => { if (ev.target === $("overlay")) closeModal(); });
+    document.addEventListener("keydown", ev => { if (ev.key === "Escape") closeModal(); });
+
+    fillFilters();
+    render();
+  </script>
+{% endblock %}

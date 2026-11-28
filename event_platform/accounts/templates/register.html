@@ -1,0 +1,119 @@
+{% extends "auth.html" %}
+{% block title %}Create account · Blueboard{% endblock %}
+
+{% block content %}
+  <span class="eyebrow">Ateneo Campus Events</span>
+  <h1>Create your account.</h1>
+
+  <div class="tabs">
+    <button type="button" class="tab {% if role != 'organization' %}active{% endif %}"
+            data-role="student" data-url="{% url 'participant_register' %}">
+      <svg class="i"><use href="#i-student"/></svg>Student
+    </button>
+    <button type="button" class="tab {% if role == 'organization' %}active{% endif %}"
+            data-role="organization" data-url="{% url 'organizer_register' %}">
+      <svg class="i"><use href="#i-orgs"/></svg>Organization
+    </button>
+  </div>
+
+  {% if error %}<div class="error"><svg class="i"><use href="#i-info"/></svg>{{ error }}</div>{% endif %}
+
+  <form method="post" data-role-form novalidate
+        action="{% if role == 'organization' %}{% url 'organizer_register' %}{% else %}{% url 'participant_register' %}{% endif %}">
+    {% csrf_token %}
+    <input type="hidden" name="role" id="role" value="{{ role|default:'student' }}">
+
+    <div class="auth-fields">
+      <!-- ===== Student-only fields (→ participant_register) ===== -->
+      <div class="form-grid" data-only="student" {% if role == 'organization' %}hidden{% endif %}>
+        <label class="field">
+          <span>First name</span>
+          <input class="control" type="text" name="firstName" placeholder="Your first name"
+                 value="{{ form.firstName|default:'' }}" required>
+        </label>
+
+        <label class="field">
+          <span>Last name</span>
+          <input class="control" type="text" name="lastName" placeholder="Your last name"
+                 value="{{ form.lastName|default:'' }}" required>
+        </label>
+
+        <label class="field">
+          <span>ID number</span>
+          <input class="control" type="text" name="idNumber" placeholder="e.g. 230000"
+                 value="{{ form.idNumber|default:'' }}" required>
+        </label>
+
+        <label class="field">
+          <span>Year level</span>
+          <select class="control" name="year">
+            {% for y in "12345" %}
+              <option value="{{ y }}" {% if form.year == y %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="field span-2">
+          <span>Course</span>
+          <select class="control" name="course" required>
+            <option value="" disabled {% if not form.course %}selected{% endif %}>Select your course</option>
+            {% for course in courses %}
+              <option value="{{ course }}" {% if form.course == course %}selected{% endif %}>{{ course }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <div class="field span-2">
+          <span>Organization memberships</span>
+          <div class="checklist">
+            <div class="checklist-search">
+              <svg class="i"><use href="#i-search"/></svg>
+              <input class="control" type="text" id="org-search" placeholder="Search organizations" aria-label="Search organizations">
+            </div>
+            <div class="checklist-items" id="org-list">
+              {% for organization in all_organizations %}
+                <label>
+                  <input type="checkbox" name="organizations" value="{{ organization }}"
+                         {% if organization in selected_orgs %}checked{% endif %}>
+                  {{ organization }}
+                </label>
+              {% endfor %}
+              <div class="checklist-empty" id="org-empty" hidden>No organizations match your search.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Organization-only fields (→ organizer_register) ===== -->
+      <div data-only="organization" {% if role != 'organization' %}hidden{% endif %}>
+        <label class="field">
+          <span>Organization name</span>
+          <select class="control" name="organizationName" required>
+            <option value="" disabled {% if not form.organizationName %}selected{% endif %}>Select your organization</option>
+            {% for organization in all_organizations %}
+              <option value="{{ organization }}" {% if form.organizationName == organization %}selected{% endif %}>{{ organization }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <!-- ===== Shared fields ===== -->
+      <label class="field">
+        <span id="email-label">{% if role == 'organization' %}Organization email{% else %}Student email{% endif %}</span>
+        <input class="control" type="email" id="email" name="email" autocomplete="email"
+               placeholder="{% if role == 'organization' %}org@ateneo.edu{% else %}name@student.ateneo.edu{% endif %}"
+               value="{{ form.email|default:'' }}" required>
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <input class="control" type="password" name="password" placeholder="Enter your password"
+               autocomplete="new-password" required>
+      </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Create account</button>
+  </form>
+
+  <p class="switch">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+{% endblock %}

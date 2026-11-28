@@ -1,0 +1,20 @@
+{% extends 'events/base.html' %}
+
+{% block title %}Edit {{ event.eventName }}{% endblock %}
+
+{% block extra_style %}
+{% include 'events/_event_form_style.html' %}
+{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block content %}
+  <div class="page-head">
+    <span class="eyebrow">Organizer workspace</span>
+  </div>
+{% endblock %}
+
+{% block modal %}
+  {% url 'event_detail' event_id=event_id as close_url %}
+  {% include 'events/_event_form.html' with heading="Edit event" submit_label="Save changes" close_url=close_url %}
+{% endblock %}

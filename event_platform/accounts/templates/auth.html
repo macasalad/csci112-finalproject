@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% comment %}
+  Sign-in and sign-up. Uses base.html's colors, fields, buttons and icons,
+  with the original split-screen layout (form left, navy panel right).
+{% endcomment %}
+
+{% block extra_style %}
+    body { background: #fff; }
+
+    /* ---------- Split layout ---------- */
+    .auth-page { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-height: 100vh; padding: 14px; }
+    .auth-main { display: flex; align-items: center; justify-content: center; padding: 24px 32px; }
+    .form-wrap { width: 100%; max-width: 320px; }
+    .form-wrap .brand { margin-bottom: 44px; }
+    .form-wrap h1 { margin-bottom: 16px; }
+    .form-wrap .error { margin-bottom: 14px; }
+    .auth-fields { display: grid; gap: 14px; }
+    .auth-fields + .btn { margin-top: 18px; }
+
+    .switch { text-align: center; font-size: 8.5px; color: var(--muted); margin-top: 14px; }
+    .switch a { color: var(--blue); font-weight: 600; text-decoration: none; }
+    .switch a:hover { text-decoration: underline; }
+
+    /* ---------- Student / Organization tabs (sign-up only) ---------- */
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--tab-bg); border-radius: 8px; padding: 3px; margin-bottom: 18px; }
+    .tab { display: flex; align-items: center; justify-content: center; gap: 7px; border: 0; background: transparent; font: 500 10px "DM Sans", sans-serif; color: var(--muted); padding: 9px 0; border-radius: 6px; }
+    .tab svg { width: 13px; height: 13px; }
+    .tab.active { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(16,47,94,.12); }
+
+    /* ---------- Navy side panel ---------- */
+    .auth-aside { position: relative; overflow: hidden; background: var(--navy); border-radius: 12px; padding: 64px 56px 40px; color: #fff; display: flex; flex-direction: column; }
+    .auth-aside::before, .auth-aside::after { content: ""; position: absolute; border-radius: 50%; border-style: solid; border-color: rgba(255,255,255,.06); pointer-events: none; }
+    .auth-aside::before { width: 420px; height: 420px; border-width: 58px; top: -150px; right: -150px; }
+    .auth-aside::after { width: 300px; height: 300px; border-width: 50px; bottom: -150px; left: -110px; }
+    .auth-aside > * { position: relative; z-index: 1; }
+    .auth-aside .panel-icon svg { width: 26px; height: 26px; color: #8fb2ee; }
+    .auth-aside h2 { font: 700 clamp(40px, 4.6vw, 64px) "Manrope", sans-serif; line-height: 1.05; letter-spacing: -.02em; margin-top: 26px; max-width: 420px; }
+    .auth-aside .panel-foot { margin-top: auto; font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.55); }
+
+    @media (max-width: 900px) {
+      .auth-page { grid-template-columns: 1fr; padding: 0; }
+      .auth-aside { display: none; }
+    }
+{% endblock %}
+
+{# No top bar on sign-in / sign-up #}
+{% block topbar %}{% endblock %}
+
+{% block layout %}
+  <div class="auth-page">
+    <main class="auth-main">
+      <div class="form-wrap">
+        <div class="brand">
+          <div class="brand-icon"><svg class="i"><use href="#i-cal"/></svg></div>
+          <div>
+            <div class="brand-name">Blueboard</div>
+            <div class="brand-sub">Ateneo Events</div>
+          </div>
+        </div>
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    <aside class="auth-aside">
+      <div class="panel-icon"><svg class="i"><use href="#i-cal"/></svg></div>
+      <h2>Discover and join campus events.</h2>
+      <div class="panel-foot">For the Ateneo de Manila University community</div>
+    </aside>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    (function () {
+      // ---- Student / Organization tabs (register page only) ----
+      const tabs = document.querySelectorAll(".tab[data-role]");
+      const roleInput = document.getElementById("role");
+      const form = document.querySelector("form[data-role-form]");
+      const emailLabel = document.getElementById("email-label");
+      const emailInput = document.getElementById("email");
+
+      function setRole(role) {
+        roleInput.value = role;
+        tabs.forEach(t => t.classList.toggle("active", t.dataset.role === role));
+
+        // Post to the matching view and keep the URL in sync
+        const active = [...tabs].find(t => t.dataset.role === role);
+        if (form && active && active.dataset.url) {
+          form.action = active.dataset.url;
+          if (location.pathname !== active.dataset.url) {
+            try { history.replaceState(null, "", active.dataset.url); } catch (e) { /* URL sync is optional */ }
+          }
+        }
+
+        if (emailLabel) emailLabel.textContent = role === "student" ? "Student email" : "Organization email";
+        if (emailInput) emailInput.placeholder = role === "student" ? "name@student.ateneo.edu" : "org@ateneo.edu";
+
+        // Show only this role's fields; hidden fields are disabled so they aren't submitted
+        document.querySelectorAll("[data-only]").forEach(el => {
+          const show = el.dataset.only === role;
+          el.hidden = !show;
+          el.querySelectorAll("input, select").forEach(i => i.disabled = !show);
+        });
+      }
+
+      if (tabs.length && roleInput) {
+        tabs.forEach(t => t.addEventListener("click", () => setRole(t.dataset.role)));
+        setRole(roleInput.value || "student");
+      }
+
+      // ---- Organization search (register page) ----
+      const search = document.getElementById("org-search");
+      if (search) {
+        search.addEventListener("input", () => {
+          const q = search.value.trim().toLowerCase();
+          let shown = 0;
+          document.querySelectorAll("#org-list label").forEach(label => {
+            const match = label.textContent.toLowerCase().includes(q);
+            label.hidden = !match;
+            if (match) shown++;
+          });
+          const empty = document.getElementById("org-empty");
+          if (empty) empty.hidden = shown > 0;
+        });
+      }
+    })();
+  </script>
+{% endblock %}

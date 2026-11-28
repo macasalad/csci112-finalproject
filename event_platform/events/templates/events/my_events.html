@@ -1,0 +1,160 @@
+{% extends 'events/base.html' %}
+
+{% block title %}My events · Blueboard{% endblock %}
+
+{% block content %}
+  <!-- ========== HERO ========== -->
+  <section class="hero">
+    <div>
+      <div class="hero-eyebrow">{% if is_organizer %}Organizer workspace{% else %}Your registrations{% endif %}</div>
+      <h1>{% if is_organizer %}Events you're hosting.{% else %}Events on your calendar.{% endif %}</h1>
+    </div>
+    <div class="hero-stat">
+      <b>{{ events|length }}</b>
+      <span>{% if is_organizer %}hosted events{% else %}registrations{% endif %}</span>
+    </div>
+  </section>
+
+  <!-- ========== SEARCH + FILTERS (submitted to the server, like before) ========== -->
+  <section class="search-zone">
+    <form method="GET" id="filters" action="{% url 'org_event_list' %}">
+      <label class="search">
+        <svg class="i"><use href="#i-search"/></svg>
+        <span class="sr-only">Search your events</span>
+        <input type="search" name="search" value="{{ filters.search }}" placeholder="Search your events">
+      </label>
+
+      <div class="filters">
+        <div class="select-wrap">
+          <svg class="i lead"><use href="#i-filter"/></svg>
+          <select name="eventType" aria-label="Event type">
+            <option value="">All types</option>
+            {% for type in types %}
+              <option value="{{ type }}" {% if filters.eventType == type %}selected{% endif %}>{{ type }}</option>
+            {% endfor %}
+          </select>
+          <svg class="i chev"><use href="#i-chev"/></svg>
+        </div>
+
+        <div class="select-wrap">
+          <svg class="i lead"><use href="#i-orgs"/></svg>
+          <select name="openToAll" aria-label="Audience">
+            <option value="">Everyone</option>
+            <option value="yes" {% if filters.openToAll == 'yes' %}selected{% endif %}>Open to all</option>
+            <option value="no" {% if filters.openToAll == 'no' %}selected{% endif %}>Members only</option>
+          </select>
+          <svg class="i chev"><use href="#i-chev"/></svg>
+        </div>
+
+        <div class="select-wrap">
+          <svg class="i lead"><use href="#i-cal"/></svg>
+          <input type="date" name="min_date" value="{{ min_date }}" aria-label="Start date from" title="Start date from">
+        </div>
+
+        <div class="select-wrap">
+          <svg class="i lead"><use href="#i-cal"/></svg>
+          <input type="date" name="max_date" value="{{ max_date }}" aria-label="Start date to" title="Start date to">
+        </div>
+
+        <label class="check-pill">
+          <input type="checkbox" name="notDone" {% if filters.notDone %}checked{% endif %}>
+          Upcoming &amp; ongoing only
+        </label>
+
+        <div class="filter-actions">
+          <a class="clear-link" href="{% url 'org_event_list' %}">Clear</a>
+          <button type="submit" class="btn btn-primary btn-inline"><svg class="i"><use href="#i-filter"/></svg>Apply filters</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- ========== LISTING ========== -->
+  <main class="listing">
+    <div class="listing-head">
+      <div>
+        <h2>My events</h2>
+        <span class="result-count">{{ events|length }} result{{ events|length|pluralize }} shown</span>
+      </div>
+      <div class="select-wrap sort">
+        <svg class="i lead"><use href="#i-sliders"/></svg>
+        <select name="sort" form="filters" onchange="this.form.submit()" aria-label="Sort by">
+          <option value="date_asc" {% if filters.sort == 'date_asc' %}selected{% endif %}>Soonest first</option>
+          <option value="date_desc" {% if filters.sort == 'date_desc' %}selected{% endif %}>Latest first</option>
+          <option value="name_asc" {% if filters.sort == 'name_asc' %}selected{% endif %}>Title (A–Z)</option>
+          <option value="name_desc" {% if filters.sort == 'name_desc' %}selected{% endif %}>Title (Z–A)</option>
+        </select>
+        <svg class="i chev"><use href="#i-chev"/></svg>
+      </div>
+    </div>
+
+    <div class="grid">
+      {% for event in events %}
+        <article class="card static">
+          <div class="tags">
+            <span class="chip org">{{ event.org }}</span>
+            <span class="chip t-{{ event.typeClass }}">{{ event.type }}</span>
+            <span class="chip status st-{{ event.status|lower }}">{{ event.status }}</span>
+          </div>
+
+          <div class="card-main">
+            <div class="datebox"><span class="m">{{ event.month }}</span><span class="d">{{ event.day }}</span><span class="y">{{ event.year }}</span></div>
+            <div class="info">
+              <h3>{{ event.title }}</h3>
+              <div class="time">{{ event.start }} – {{ event.end }}</div>
+              <span class="aud">{{ event.audience }}</span>
+            </div>
+          </div>
+
+          <div class="venue"><svg class="i"><use href="#i-pin"/></svg><b>{{ event.venue }}</b><span class="sep"></span><span class="org">{{ event.orgName }}</span></div>
+
+          <div class="cap"><span>Capacity filled</span><b class="{% if event.full %}full{% endif %}">{{ event.taken }} / {{ event.capacity }} seats ({{ event.pct }}%)</b></div>
+          <div class="bar {% if event.full %}full{% endif %}"><i style="width:{{ event.bar }}%"></i></div>
+          <div class="avail {% if event.full %}full{% endif %}">{% if event.full %}Registration is currently full{% else %}{{ event.left }} seat{{ event.left|pluralize }} available{% endif %}</div>
+
+          <div class="card-spacer"></div>
+
+          <div class="card-actions">
+            {% if is_organizer %}
+              <a class="btn btn-secondary" href="{% url 'event_detail' event.id %}"><svg class="i"><use href="#i-orgs"/></svg>Roster</a>
+              {% if event.status == 'Upcoming' %}
+                <a class="btn btn-primary" href="{% url 'edit_event' event.id %}"><svg class="i"><use href="#i-edit"/></svg>Edit</a>
+                <form method="post" action="{% url 'cancel_event' event.id %}" data-cancel-event
+                      data-title="{{ event.title }}" data-when="{{ event.start_full }}"
+                      data-venue="{{ event.venue }}" data-enlisted="{{ event.taken }} / {{ event.capacity }}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger">Cancel</button>
+                </form>
+              {% endif %}
+            {% else %}
+              <a class="btn btn-secondary" href="{% url 'event_detail' event.id %}">View details</a>
+              {% if event.status == 'Upcoming' %}
+                <form method="post" action="{% url 'delist' event.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="org_event_list">
+                  <button type="submit" class="btn btn-danger-solid">Delist</button>
+                </form>
+              {% endif %}
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <div class="empty">
+          {% if has_filters %}
+            <b>No events match these filters</b>
+            <span>Try clearing a filter or searching for a different title.</span>
+            <a class="btn btn-secondary" href="{% url 'org_event_list' %}">Clear filters</a>
+          {% elif is_organizer %}
+            <b>You haven't hosted any events yet</b>
+            <span>Events you create will show up here with their enlistment and roster.</span>
+            <a class="btn btn-primary" href="{% url 'create_event' %}"><svg class="i"><use href="#i-plus"/></svg>Host event</a>
+          {% else %}
+            <b>You haven't enlisted in any events yet</b>
+            <span>Find something on Discover and enlist. It will show up here.</span>
+            <a class="btn btn-primary" href="{% url 'event_list' %}">Discover events</a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </main>
+{% endblock %}

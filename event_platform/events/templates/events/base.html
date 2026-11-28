@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Blueboard · Ateneo Events{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Same scale as accounts/base.html and the sign-in pages. */
+    :root {
+      --navy: #102f5e;
+      --blue: #1a5ad9;
+      --blue-dark: #1650c2;
+      --eyebrow: #4a76c9;
+      --ink: #0f1f3d;
+      --text: #0f1f3d;
+      --muted: #6b7690;
+      --faint: #8a94a3;
+      --placeholder: #9aa3b5;
+      --soft: #edf1fa;
+      --border: #dfe3ec;
+      --line: #edf0f5;
+      --bg: #f7f8fb;
+      --panel-alt: #f7f8fb;
+      --green: #12804b;
+      --green-bg: #e9f6ef;
+      --green-border: #cfe9da;
+      --red: #c62828;
+      --gutter: clamp(16px, 5vw, 64px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "DM Sans", system-ui, sans-serif; color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+    button { font-family: inherit; cursor: pointer; }
+    a { color: inherit; }
+    svg.i { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    [hidden] { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+    /* ---------- Navbar (same on every page) ---------- */
+    .nav { background: #fff; height: 56px; display: flex; align-items: stretch; padding: 0 24px; border-bottom: 1px solid var(--border); position: relative; z-index: 5; }
+    .brand { display: flex; align-items: center; gap: 10px; margin-right: 40px; }
+    .brand-icon { width: 28px; height: 28px; border-radius: 7px; background: var(--navy); display: grid; place-items: center; color: #fff; }
+    .brand-icon svg { width: 16px; height: 16px; }
+    .brand-name { font-size: 13px; font-weight: 700; line-height: 1.1; }
+    .brand-sub { font-size: 8px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    .nav-links { display: flex; gap: 24px; align-items: stretch; }
+    .nav-link { background: none; border: 0; font: 600 11px "Manrope", sans-serif; color: var(--muted); position: relative; padding: 0; }
+    .nav-link:hover { color: var(--navy); }
+    .nav-link.active { color: var(--navy); }
+    .nav-link.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--blue); }
+    .nav-user { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .host-btn { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; margin-right: 8px; border: 0; border-radius: 6px; background: var(--blue); color: #fff; font: 600 9.5px "DM Sans", sans-serif; white-space: nowrap; transition: background .15s; }
+    .host-btn:hover { background: var(--blue-dark); }
+    .host-btn svg { width: 12px; height: 12px; stroke-width: 2.4; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: #dfe9fb; color: var(--navy); font: 700 10px "Manrope", sans-serif; display: grid; place-items: center; flex: none; }
+    .user-name { font-size: 11px; font-weight: 700; line-height: 1.2; }
+    .user-role { font-size: 9px; color: var(--muted); }
+    .icon-btn { background: none; border: 0; color: var(--muted); padding: 4px; display: grid; place-items: center; margin-left: 2px; border-radius: 6px; }
+    .icon-btn svg { width: 16px; height: 16px; }
+    .icon-btn:hover { color: var(--navy); background: var(--soft); }
+
+    /* ---------- Toasts (flash messages) ---------- */
+    .toast-stack { position: fixed; top: 68px; right: 24px; z-index: 40; display: grid; gap: 8px; width: min(300px, calc(100vw - 32px)); }
+    .toast { display: flex; align-items: flex-start; gap: 8px; padding: 10px 10px 10px 12px; background: #fff; border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: 8px; box-shadow: 0 8px 24px rgba(16,47,94,.14); font-size: 10px; font-weight: 600; color: var(--ink); line-height: 1.4; animation: toast-in .25s ease-out; transition: opacity .3s, transform .3s; }
+    .toast > svg { width: 14px; height: 14px; color: var(--blue); }
+    .toast.error { border-left-color: var(--red); }
+    .toast.error > svg { color: var(--red); }
+    .toast.success { border-left-color: var(--green); }
+    .toast.success > svg { color: var(--green); }
+    .toast span { flex: 1; }
+    .toast-close { background: none; border: 0; color: var(--muted); padding: 1px; display: grid; place-items: center; border-radius: 4px; }
+    .toast-close:hover { color: var(--ink); background: var(--soft); }
+    .toast-close svg { width: 12px; height: 12px; }
+    .toast.hide { opacity: 0; transform: translateX(12px); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-6px); } }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; overflow: hidden; background: var(--navy); color: #fff; padding: 0 var(--gutter); height: 170px; display: flex; align-items: center; justify-content: space-between; }
+    .hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+    .hero::before { width: 360px; height: 360px; right: -120px; top: -210px; background: rgba(255,255,255,.04); }
+    .hero::after { width: 210px; height: 210px; right: -30px; top: -140px; background: rgba(0,0,0,.08); }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-eyebrow { font-size: 8.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #9db5e0; margin-bottom: 10px; }
+    .hero h1 { font: 800 clamp(24px, 3vw, 34px) "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.08; }
+    .hero-stat { border-left: 1px solid rgba(255,255,255,.18); padding: 2px 0 2px 22px; min-width: 120px; margin-right: clamp(0px, 2vw, 32px); }
+    .hero-stat b { display: block; font: 700 28px "Manrope", sans-serif; line-height: 1; }
+    .hero-stat span { display: block; margin-top: 6px; font-size: 10px; color: #a9bddf; }
+
+    /* ---------- Page header + panel (pages without a hero) ---------- */
+    .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 22px var(--gutter) 14px; }
+    .eyebrow { display: block; font-size: 8.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--eyebrow); }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; font: 600 10px "DM Sans", sans-serif; color: var(--muted); text-decoration: none; }
+    .back-link:hover { color: var(--navy); }
+    .panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 0 var(--gutter) 40px; }
+
+    /* ---------- Search + filters ---------- */
+    .search-zone { background: #fff; padding: 18px var(--gutter); border-bottom: 1px solid var(--border); }
+    .search { position: relative; max-width: 560px; display: block; }
+    .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); }
+    .search input { width: 100%; height: 38px; padding: 0 12px 0 34px; font: 400 11px "DM Sans", sans-serif; color: var(--ink); border: 1px solid var(--border); border-radius: 8px; outline: none; background: #fff; }
+    .search input::placeholder { color: var(--placeholder); }
+    .search input:focus, .select-wrap select:focus, .select-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,90,217,.12); }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+    .select-wrap { position: relative; }
+    .select-wrap select, .select-wrap input { appearance: none; height: 32px; padding: 0 28px 0 30px; font: 500 10px "DM Sans", sans-serif; color: var(--ink); border: 1px solid var(--border); border-radius: 6px; background: #fff; outline: none; cursor: pointer; }
+    .select-wrap input[type="date"] { padding-right: 8px; }
+    .select-wrap > svg.i { position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); width: 13px; height: 13px; }
+    .select-wrap > svg.lead { left: 10px; }
+    .select-wrap > svg.chev { right: 9px; width: 11px; height: 11px; color: var(--ink); stroke-width: 2.6; }
+    .check-pill { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font: 500 10px "DM Sans", sans-serif; cursor: pointer; }
+    .check-pill input { width: 12px; height: 12px; accent-color: var(--blue); }
+    .filter-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+    .clear-link { font: 600 10px "DM Sans", sans-serif; color: var(--muted); text-decoration: none; }
+    .clear-link:hover { color: var(--blue); text-decoration: underline; }
+
+    /* ---------- Listing ---------- */
+    .listing { padding: 26px var(--gutter) 50px; }
+    .listing-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .listing-head h2 { font: 700 18px "Manrope", sans-serif; letter-spacing: -.02em; }
+    .result-count { display: block; margin-top: 3px; font-size: 9px; color: var(--muted); }
+    .sort select { height: 32px; font-size: 10px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+    .empty { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; text-align: center; color: var(--muted); padding: 48px 0; font-size: 11px; }
+    .empty b { font: 700 14px "Manrope", sans-serif; color: var(--ink); }
+
+    /* ---------- Event card ---------- */
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; cursor: pointer; transition: box-shadow .15s, transform .15s; min-width: 0; }
+    .card:hover { box-shadow: 0 6px 18px rgba(16,47,94,.08); transform: translateY(-1px); }
+    .card.static { cursor: default; }
+    .card.static:hover { transform: none; }
+    .tags { display: flex; align-items: center; gap: 5px; margin-bottom: 14px; }
+    /* Default gray background, so any event type without its own color below still gets one */
+    .chip { font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 4px; white-space: nowrap; background: #eef1f5; color: #52627a; }
+    .chip.org { background: var(--navy); color: #fff; letter-spacing: .1em; }
+    .chip.status { margin-left: auto; border: 1px solid #9db5e0; color: var(--blue); background: #fff; padding: 3px 6px; }
+    .chip.status.st-ongoing { border-color: var(--green-border); color: var(--green); }
+    .chip.status.st-completed { border-color: #cfd5e2; color: var(--muted); }
+    .chip.status.st-cancelled { border-color: #f0b4b4; color: var(--red); }
+    .t-workshop { background: #e4edfd; color: #1a4fc4; }
+    .t-talk { background: #efe8fd; color: #6b3fc4; }
+    .t-competition { background: #fdebd9; color: #c4641a; }
+    .t-conference { background: #fde6ea; color: #c42a4a; }
+    .t-social { background: #dff5e8; color: #13803f; }
+    .t-engagement { background: #ddf4f6; color: #0e7c86; }
+
+    .card-main { display: flex; gap: 12px; align-items: flex-start; min-height: 76px; }
+    .datebox { width: 56px; height: 74px; border-radius: 8px; background: linear-gradient(160deg, #1d4a98, #163b7d); color: #fff; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; }
+    .datebox .m { font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #a9bddf; }
+    .datebox .d { font: 800 24px "Manrope", sans-serif; line-height: 1.05; }
+    .datebox .y { font-size: 8px; color: #c9d6ef; }
+    .info { min-width: 0; }
+    .info h3 { font: 700 15px "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
+    .time { font-size: 10px; margin: 5px 0 7px; }
+    .aud { display: inline-block; font-size: 8.5px; font-weight: 600; color: #2f56b8; background: #e8eefc; padding: 3px 7px; border-radius: 4px; }
+
+    .venue { display: flex; align-items: center; gap: 8px; background: var(--soft); border-radius: 7px; padding: 0 12px; height: 34px; margin-top: 14px; }
+    .venue svg { color: var(--navy); width: 13px; height: 13px; }
+    .venue b { font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .venue .sep { width: 1px; height: 12px; background: #cfd7e8; flex: none; }
+    .venue .org { color: var(--muted); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+    .cap { display: flex; justify-content: space-between; font-size: 9.5px; margin-top: 16px; color: #4a5672; }
+    .cap b { color: var(--navy); font-weight: 700; }
+    .cap b.full { color: var(--red); }
+    .bar { height: 5px; border-radius: 5px; background: #e9ecf3; margin-top: 7px; overflow: hidden; }
+    .bar i { display: block; height: 100%; background: var(--blue); border-radius: 5px; }
+    .bar.full i { background: #c0302b; }
+    .avail { font-size: 8.5px; font-weight: 700; letter-spacing: .03em; color: #3b64b8; margin-top: 7px; }
+    .avail.full { color: var(--red); }
+    .card-spacer { flex: 1; min-height: 18px; }
+
+    /* ---------- Organizer event card (events/_event_card.html) ---------- */
+    .event-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+    .event-card.is-selected { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,90,217,.1); }
+    .event-card.is-muted { opacity: .7; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .s-upcoming { background: #e4edfd; color: #1a4fc4; }
+    .s-ongoing { background: var(--green-bg); color: var(--green); }
+    .s-completed { background: #eef1f5; color: #52627a; }
+    .s-cancelled { background: #fdecec; color: var(--red); }
+    .audience { font-size: 8.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+    .event-title { font: 700 15px "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; }
+    .meta { display: grid; gap: 5px; font-size: 9.5px; color: #4a5672; }
+    .meta span { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .meta svg { width: 12px; height: 12px; color: var(--muted); }
+    .enlist { display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; color: #4a5672; }
+    .enlist span { display: flex; align-items: center; gap: 6px; }
+    .enlist svg { width: 12px; height: 12px; color: var(--muted); }
+    .enlist b { color: var(--navy); }
+    .event-card .bar { margin-top: -4px; }
+    .event-card .card-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .event-card .card-actions form { display: contents; }
+    .card-actions:not(:has(*)) { display: none; }
+    .btn-sm { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font: 600 9px "DM Sans", sans-serif; color: var(--navy); text-decoration: none; cursor: pointer; }
+    .btn-sm:hover { background: var(--soft); }
+    .btn-sm svg { width: 11px; height: 11px; }
+    .btn-sm.danger { color: var(--red); }
+    .btn-sm.danger:hover { background: #fff6f6; }
+    .link-sm { margin-left: auto; font: 600 9px "DM Sans", sans-serif; color: var(--blue); text-decoration: none; }
+    .link-sm:hover { text-decoration: underline; }
+
+    /* ---------- Buttons ---------- */
+    .btn { width: 100%; height: 34px; margin-top: auto; border-radius: 6px; border: 1px solid transparent; font: 600 9.5px "DM Sans", sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: background .15s; }
+    .btn svg { width: 12px; height: 12px; }
+    .btn-inline { width: auto; height: 32px; margin: 0; padding: 0 14px; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-secondary { background: #fff; color: var(--navy); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--soft); }
+    .btn-danger { background: #fff; color: var(--red); border-color: var(--border); }
+    .btn-danger:hover { background: #fff6f6; }
+    .btn-enlisted { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+    .btn-full { background: #97b4ec; color: #fff; cursor: not-allowed; }
+    .btn-delist { background: #fff; color: var(--red); border-color: var(--border); height: 38px; font-size: 10px; }
+    .btn-delist:hover { background: #fff6f6; }
+    .card-actions { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+    .card-actions .btn { height: 30px; }
+    .card-actions form { display: contents; }
+    .empty .btn { width: auto; padding: 0 16px; margin-top: 8px; }
+
+    /* ---------- Cancel-event confirmation popup (same look as the Discover details popup) ---------- */
+    .cm-overlay { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10,30,60,.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .cm-overlay.open { display: flex; }
+    .cm-box { width: 100%; max-width: 420px; background: #fff; border-radius: 14px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.25); position: relative; }
+    .cm-close { position: absolute; top: 20px; right: 20px; background: none; border: 0; color: #4a5672; padding: 2px; border-radius: 6px; display: grid; place-items: center; }
+    .cm-close:hover { background: var(--soft); }
+    .cm-close svg { width: 16px; height: 16px; }
+    .cm-icon { width: 38px; height: 38px; border-radius: 10px; background: #fdecec; color: var(--red); display: grid; place-items: center; margin-bottom: 14px; }
+    .cm-icon svg { width: 18px; height: 18px; }
+    .cm-box .eyebrow { color: var(--red); margin-bottom: 5px; }
+    .cm-box h2 { font: 800 20px "Manrope", sans-serif; letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere; padding-right: 24px; }
+    .cm-facts { display: grid; gap: 8px; margin: 16px 0 14px; }
+    .cm-fact { display: flex; align-items: center; gap: 10px; background: var(--bg); border-radius: 8px; padding: 9px 12px; }
+    .cm-fact svg { width: 15px; height: 15px; color: var(--blue); }
+    .cm-fact small { display: block; font-size: 8.5px; color: var(--muted); }
+    .cm-fact b { display: block; font-size: 10px; font-weight: 700; }
+    .cm-warn { background: #fdecec; border-radius: 8px; padding: 10px 12px; font-size: 9.5px; line-height: 1.5; color: #8f1f1f; }
+    .cm-warn b { display: block; font-size: 10.5px; color: var(--red); margin-bottom: 2px; }
+    .cm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .cm-actions .btn { width: auto; margin: 0; padding: 0 16px; }
+    .btn-danger-solid { background: var(--red); color: #fff; }
+    .btn-danger-solid:hover { background: #a91f1f; }
+    .btn-danger-solid:disabled { opacity: .6; cursor: wait; }
+
+    @media (max-width: 800px) {
+      .nav { height: auto; padding: 10px 16px 0; flex-wrap: wrap; gap: 8px; }
+      .brand { margin-right: 12px; }
+      .nav-links { gap: 18px; order: 3; width: 100%; height: 34px; }
+      .user-name, .user-role, .brand-sub { display: none; }
+      .hero { height: auto; padding-top: 28px; padding-bottom: 28px; flex-direction: column; align-items: flex-start; gap: 16px; }
+      .hero-stat { border-left: 0; padding-left: 0; }
+      .filter-actions { margin-left: 0; }
+    }
+
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+
+  <!-- SVG icon sprite (shared) -->
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M8 2v4M16 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></symbol>
+    <symbol id="i-orgs" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/><circle cx="17.5" cy="9" r="2.5"/><path d="M18 14a4.5 4.5 0 0 1 3.5 4.4V20"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7a6 6 0 0 1 10 0"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-userplus" viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M19 8v6M16 11h6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  </svg>
+
+  <!-- ========== NAVBAR (same for participants and organizers) ========== -->
+  {% with page=request.resolver_match.url_name role=request.session.role %}
+  <header class="nav">
+    <div class="brand">
+      <div class="brand-icon"><svg class="i"><use href="#i-cal"/></svg></div>
+      <div>
+        <div class="brand-name">Blueboard</div>
+        <div class="brand-sub">Ateneo Events</div>
+      </div>
+    </div>
+
+    <nav class="nav-links">
+      <button type="button" class="nav-link {% if page == 'event_list' %}active{% endif %}" data-url="{% url 'event_list' %}">Discover</button>
+      <button type="button" class="nav-link {% if page == 'org_event_list' %}active{% endif %}" data-url="{% url 'org_event_list' %}">My events</button>
+    </nav>
+
+    <div class="nav-user">
+      {% if role == 'organizer' %}
+        <button type="button" class="host-btn" data-url="{% url 'create_event' %}"><svg class="i"><use href="#i-plus"/></svg>Host event</button>
+      {% endif %}
+
+      <div class="avatar">{{ request.session.name|default:"?"|first|upper }}</div>
+      <div>
+        <div class="user-name">{{ request.session.name }}</div>
+        <div class="user-role">{{ role|title }}</div>
+      </div>
+
+      <a class="icon-btn" href="{% url 'edit_profile' %}" title="Profile" aria-label="Edit profile"><svg class="i"><use href="#i-user"/></svg></a>
+      <a class="icon-btn" href="{% url 'logout' %}" title="Log out" aria-label="Log out"><svg class="i"><use href="#i-logout"/></svg></a>
+    </div>
+  </header>
+  {% endwith %}
+
+  {# Pages that show messages themselves (e.g. inside a form) override this with an empty block. #}
+  {% block messages %}
+    {% if messages %}
+      <div class="toast-stack" role="status" aria-live="polite">
+        {% for message in messages %}
+          <div class="toast {{ message.level_tag }}">
+            <svg class="i"><use href="#i-{% if message.level_tag == 'success' %}check{% else %}info{% endif %}"/></svg>
+            <span>{{ message }}</span>
+            <button type="button" class="toast-close" aria-label="Dismiss"><svg class="i"><use href="#i-x"/></svg></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endblock %}
+
+  {% block content %}{% endblock %}
+
+  {# Dialogs that sit on top of the page (create / edit event form). #}
+  {% block modal %}{% endblock %}
+
+  {# Cancel-event confirmation. Opened by any <form data-cancel-event ...> on the page. #}
+  <div class="cm-overlay" id="cancel-confirm" role="dialog" aria-modal="true" aria-labelledby="cm-title">
+    <div class="cm-box">
+      <button type="button" class="cm-close" data-cm-close aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>
+      <div class="cm-icon"><svg class="i"><use href="#i-trash"/></svg></div>
+      <span class="eyebrow">Cancel event</span>
+      <h2 id="cm-title"></h2>
+      <div class="cm-facts">
+        <div class="cm-fact"><svg class="i"><use href="#i-cal"/></svg><div><small>Date &amp; time</small><b id="cm-when"></b></div></div>
+        <div class="cm-fact"><svg class="i"><use href="#i-pin"/></svg><div><small>Venue</small><b id="cm-venue"></b></div></div>
+        <div class="cm-fact"><svg class="i"><use href="#i-users"/></svg><div><small>Enlisted</small><b id="cm-enlisted"></b></div></div>
+      </div>
+      <div class="cm-warn">
+        <b>This can't be undone.</b>
+        The event will be marked as Cancelled and removed from Discover, so participants can no longer see or enlist in it.
+      </div>
+      <div class="cm-actions">
+        <button type="button" class="btn btn-secondary" data-cm-close>Keep event</button>
+        <button type="button" class="btn btn-danger-solid" id="cm-confirm"><svg class="i"><use href="#i-trash"/></svg>Cancel event</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Navbar buttons (Discover / My events / Host event) open their page.
+    document.querySelectorAll(".nav [data-url]").forEach(el =>
+      el.addEventListener("click", () => { location.href = el.dataset.url; })
+    );
+
+    // Toasts: close on click, and fade out on their own after 5 seconds.
+    document.querySelectorAll(".toast").forEach(t => {
+      const dismiss = () => { t.classList.add("hide"); setTimeout(() => t.remove(), 300); };
+      t.querySelector(".toast-close").addEventListener("click", dismiss);
+      setTimeout(dismiss, 5000);
+    });
+
+    // Cancel-event popup: any <form data-cancel-event> asks here before it is sent.
+    (function () {
+      const overlay = document.getElementById("cancel-confirm");
+      const confirmBtn = document.getElementById("cm-confirm");
+      let pending = null;
+
+      function open(form) {
+        pending = form;
+        const d = form.dataset;
+        document.getElementById("cm-title").textContent = d.title || "this event";
+        document.getElementById("cm-when").textContent = d.when || "—";
+        document.getElementById("cm-venue").textContent = d.venue || "To be announced";
+        document.getElementById("cm-enlisted").textContent = d.enlisted || "—";
+        confirmBtn.disabled = false;
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        confirmBtn.focus();
+      }
+      function close() {
+        overlay.classList.remove("open");
+        document.body.style.overflow = "";
+        pending = null;
+      }
+
+      document.addEventListener("submit", e => {
+        const form = e.target.closest("form[data-cancel-event]");
+        if (!form) return;
+        e.preventDefault();   // show the popup instead of sending right away
+        open(form);
+      });
+      confirmBtn.addEventListener("click", () => {
+        if (!pending) return;
+        confirmBtn.disabled = true;   // no double submits
+        pending.submit();             // .submit() skips the listener above, so it is sent for real
+      });
+      overlay.querySelectorAll("[data-cm-close]").forEach(b => b.addEventListener("click", close));
+      overlay.addEventListener("click", e => { if (e.target === overlay) close(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape" && overlay.classList.contains("open")) close(); });
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
