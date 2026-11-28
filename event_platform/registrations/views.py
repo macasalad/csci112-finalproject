@@ -9,9 +9,7 @@ from .crud.create import create_registration
 from .crud.read import get_registration
 from .crud.update import update_registration
 
-
 def go_back(request):
-    # Return to the page the button was on (Discover or My events)
     if request.POST.get('next') == 'org_event_list':
         return redirect('org_event_list')
     return redirect('event_list')
@@ -47,13 +45,11 @@ def enlist_view(request, event_id):
             messages.error(request, f"Only members of {organizer['organizationName']} can enlist in this event.")
             return go_back(request)
 
-    # Only adds a seat if the event is still Upcoming and not full
     if add_participant_count(event_id).modified_count == 0:
         messages.error(request, 'This event is already full.')
         return go_back(request)
 
     if registration:
-        # Enlisting again after delisting: reuse the same registration
         update_registration(registration['_id'], {
             'status': 'Registered',
             'registeredAt': timezone.now(),

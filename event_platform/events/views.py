@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta, timezone as dt_timezone
-
 from bson import ObjectId
 from bson.errors import InvalidId
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import render, redirect
 from django.utils import timezone
-
 from accounts.crud.read import get_organizer_by_id, get_participant_by_id
 from .crud.create import create_event
 from .crud.read import (
@@ -14,37 +12,24 @@ from .crud.read import (
     get_upcoming_events,
     get_events_by_organization,
     get_registered_events,
-    get_registered_event_ids,
 )
 from .crud.update import update_event, update_event_statuses
 from registrations.crud.read import get_registered_event_ids, get_event_participants
 from .form_choices import STATUSES, TYPES
 
-
-# ---------- Helpers ----------
-
 def to_local(value):
-    # PyMongo returns naive UTC datetimes. Convert them to local time.
     if timezone.is_naive(value):
         value = value.replace(tzinfo=dt_timezone.utc)
     return timezone.localtime(value)
 
-
 def _fmt_time(value):
-    return value.strftime('%I:%M %p').lstrip('0')   # "1:00 PM"
-
+    return value.strftime('%I:%M %p').lstrip('0')
 
 def _initials(name):
     letters = "".join(word[0] for word in name.split() if word[:1].isupper())
     return letters[:6] or "ORG"
 
-
 def _card(doc, enlisted_ids=frozenset(), org_cache=None):
-    """
-    Turns an event document into the fields an event card needs.
-    Discover (JavaScript) and My events (Django template) use the same fields,
-    so the cards on both pages look the same.
-    """
     org_cache = {} if org_cache is None else org_cache
     org_id = doc.get('organizationID')
     if org_id not in org_cache:
@@ -87,7 +72,6 @@ def _card(doc, enlisted_ids=frozenset(), org_cache=None):
         'enlisted': doc['_id'] in enlisted_ids,
     }
 
-
 def _filters_from_request(request):
     filters = {
         'search': request.GET.get('search', '').strip(),
@@ -127,7 +111,6 @@ def event_list(request):
     org_cache = {}
     cards = [_card(doc, enlisted, org_cache) for doc in get_upcoming_events()]
 
-    # Members-only events from organizations the student isn't in: disabled button on Discover
     if role == 'participant':
         participant = get_participant_by_id(profile_id)
         my_orgs = participant.get('organizations', []) if participant else []
@@ -138,10 +121,6 @@ def event_list(request):
         'events_data': cards,
         'can_enlist': role == 'participant',
     })
-
-
-# ---------- My events (organizers AND participants) ----------
-# URL name stays 'org_event_list' so existing redirects keep working.
 
 def org_event_list_view(request):
     if not request.session.get('user_id'):
@@ -178,14 +157,7 @@ def org_event_list_view(request):
         'has_filters': has_filters,
     })
 
-
-# ---------- Organizer: create / edit / cancel ----------
-
 def _parse_event_form(request):
-    """
-    Reads the create/edit form. Returns (data, error).
-    A blank or invalid field gives an error message instead of a crash.
-    """
     try:
         start_time = timezone.make_aware(datetime.strptime(request.POST.get('startTime', ''), '%Y-%m-%dT%H:%M'))
         end_time = timezone.make_aware(datetime.strptime(request.POST.get('endTime', ''), '%Y-%m-%dT%H:%M'))
@@ -219,7 +191,6 @@ def _parse_event_form(request):
 
     return data, None
 
-
 def create_event_view(request):
     if not request.session.get('user_id'):
         return redirect('login')
@@ -247,7 +218,6 @@ def create_event_view(request):
         'types': TYPES
     })
 
-
 def edit_event_view(request, event_id):
     if not request.session.get('user_id'):
         return redirect('login')
@@ -274,7 +244,6 @@ def edit_event_view(request, event_id):
         'end_time': to_local(event['endTime']).strftime('%Y-%m-%dT%H:%M'),
         'event_id': event_id
     })
-
 
 def cancel_event_view(request, event_id):
     if not request.session.get('user_id'):
