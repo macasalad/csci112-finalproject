@@ -21,12 +21,19 @@ def get_event_by_id(event_id):
 
 def get_upcoming_events():
     return list(events.aggregate([
-        { "$match": { "status": "Upcoming" } },
-        { "$sort": { "startTime": 1 } }
+        {
+            "$match": {
+                "status": "Upcoming"
+            } 
+        },
+        {
+            "$sort": {
+                "startTime": 1
+            }
+        }
     ]))
 
 def _filter_stages(filters=None):
-    """The search, filter and sort stages shared by both "My events" lists."""
     filters = filters or {}
     match = {}
     date_filter = {}
@@ -62,8 +69,14 @@ def _filter_stages(filters=None):
     sort_field, sort_order = SORT_OPTIONS.get(filters.get('sort'), ('startTime', 1))
 
     return [
-        { "$match": match },
-        { "$sort": { sort_field: sort_order } }
+        {
+            "$match": match
+        },
+        {
+            "$sort": { 
+                sort_field: sort_order
+            }
+        }
     ]
 
 def get_events_by_organization(org_id, filters=None):
